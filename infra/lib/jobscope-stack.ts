@@ -165,8 +165,10 @@ export class JobscopeStack extends Stack {
             "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
           },
           StringLike: {
+            // GitHub's sub claim embeds immutable owner/repo IDs
+            // (see repos/{owner}/{repo}/actions/oidc/customization/sub)
             "token.actions.githubusercontent.com:sub":
-              "repo:Kaleugit/jobscope:*",
+              "repo:Kaleugit@54084311/jobscope@1340924790:*",
           },
         }
       ),
