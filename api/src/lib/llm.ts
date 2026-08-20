@@ -54,17 +54,17 @@ function parseJobInfo(text: string): JobInfo {
 export interface ResumeProfile {
   name?: string;
   title?: string;
-  yearsExperience?: number;
+  location?: string;
   skills: string[];
 }
 
 const RESUME_RULES = `You are a technical recruiter reading a resume. Extract:
 - "name": the candidate's full name
 - "title": their current or most recent job title
-- "yearsExperience": total years of professional experience as a number
+- "location": where the candidate is based, as "City, Country" (or the closest available, e.g. just the country). Omit if the resume does not say.
 - "skills": technical and professional skills the candidate actually has (tools, languages, frameworks, cloud services, methodologies). Normalize names (e.g. "ReactJS" -> "React", "Amazon Web Services" -> "AWS"). Maximum 40, most relevant first.
 
-Return ONLY a JSON object like {"name": "...", "title": "...", "yearsExperience": 5, "skills": ["...", "..."]} with no markdown fences and no commentary. If the document is not a resume, return {"error": "<short reason>"}.`;
+Return ONLY a JSON object like {"name": "...", "title": "...", "location": "...", "skills": ["...", "..."]} with no markdown fences and no commentary. If the document is not a resume, return {"error": "<short reason>"}.`;
 
 export async function extractResumeProfile(
   fileBase64: string,
@@ -127,10 +127,8 @@ export async function extractResumeProfile(
   return {
     name: typeof parsed.name === "string" ? parsed.name.trim() : undefined,
     title: typeof parsed.title === "string" ? parsed.title.trim() : undefined,
-    yearsExperience:
-      typeof parsed.yearsExperience === "number"
-        ? parsed.yearsExperience
-        : undefined,
+    location:
+      typeof parsed.location === "string" ? parsed.location.trim() : undefined,
     skills,
   };
 }

@@ -452,6 +452,39 @@ textarea {
   color: var(--muted);
 }
 
+.skills-drawer summary {
+  cursor: pointer;
+  list-style: none;
+  color: var(--muted);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  transition: color 0.15s ease;
+}
+.skills-drawer summary::-webkit-details-marker {
+  display: none;
+}
+.skills-drawer summary:hover {
+  color: var(--text);
+}
+.skills-drawer summary:focus-visible {
+  outline: 1px solid var(--text);
+  outline-offset: 2px;
+}
+
+.drawer-marker::before {
+  content: "[+]";
+}
+.skills-drawer[open] .drawer-marker::before {
+  content: "[-]";
+}
+
+.skills-drawer .tags {
+  margin-top: 10px;
+}
+
 /* ── skill gap dashboard ────────────────────────────────────────────── */
 
 .stats {

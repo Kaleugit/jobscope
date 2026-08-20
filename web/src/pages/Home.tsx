@@ -85,6 +85,14 @@ export function Home({
 
         {profile && (
           <div className="profile-card">
+            {profile.analysisStatus === "done" && (
+              <p className="profile-meta">
+                {[profile.name, profile.title, profile.location]
+                  .filter(Boolean)
+                  .join(" //")}
+              </p>
+            )}
+
             <div className="profile-file">
               <span className="file-name">[file] {profile.fileName}</span>
               <div className="app-actions">
@@ -126,28 +134,22 @@ export function Home({
               </p>
             )}
 
-            {profile.analysisStatus === "done" && (
-              <>
-                <p className="profile-meta">
-                  {[
-                    profile.name,
-                    profile.title,
-                    profile.yearsExperience
-                      ? `${profile.yearsExperience} years`
-                      : null,
-                  ]
-                    .filter(Boolean)
-                    .join(" //")}
-                </p>
-                <div className="tags">
-                  {profile.skills?.map((s) => (
-                    <span key={s} className="tag">
-                      [{s}]
-                    </span>
-                  ))}
-                </div>
-              </>
-            )}
+            {profile.analysisStatus === "done" &&
+              (profile.skills?.length ?? 0) > 0 && (
+                <details className="skills-drawer">
+                  <summary>
+                    <span className="drawer-marker" aria-hidden="true" />
+                    my skills ({profile.skills!.length})
+                  </summary>
+                  <div className="tags">
+                    {profile.skills!.map((s) => (
+                      <span key={s} className="tag">
+                        [{s}]
+                      </span>
+                    ))}
+                  </div>
+                </details>
+              )}
           </div>
         )}
       </section>

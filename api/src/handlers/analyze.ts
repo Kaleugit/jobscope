@@ -112,7 +112,7 @@ async function analyzeResume(message: ResumeMessage) {
     {
       name: profile.name,
       title: profile.title,
-      yearsExperience: profile.yearsExperience,
+      location: profile.location,
       skills: profile.skills,
     },
     "done"

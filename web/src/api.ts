@@ -24,7 +24,7 @@ export interface Profile {
   fileName: string;
   name?: string;
   title?: string;
-  yearsExperience?: number;
+  location?: string;
   skills?: string[];
   analysisStatus: "pending" | "done" | "failed";
   uploadedAt: string;

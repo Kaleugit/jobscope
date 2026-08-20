@@ -29,7 +29,7 @@ export interface Profile {
   s3Key: string;
   name?: string;
   title?: string;
-  yearsExperience?: number;
+  location?: string;
   skills?: string[];
   analysisStatus: "pending" | "done" | "failed";
   uploadedAt: string;
