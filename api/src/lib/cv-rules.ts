@@ -14,7 +14,8 @@ export const INVARIANTS = `INVARIANTS. Breaking any of these invalidates the res
 3. NEVER USE AN EM DASH IN PROSE. Not in bullets, not in paragraphs, not in the plain text letter. It is allowed only in headings and job title lines (Role | Company — City). The em dash is the most recognizable fingerprint of generated text, and a document that reads as generated loses before it is read. Use a comma, a colon, parentheses, or end the sentence. This is absolute and it is checked automatically.
 4. YOU WRITE CONTENT FRAGMENTS ONLY. No <!DOCTYPE>, <html>, <head>, <style> or <body> tags, and no CSS. The application wraps your fragments in a frozen skeleton.
 5. ONE PAGE EACH. The resume and the letter each fit on a single A4 page. This is measured, not estimated.
-6. NO EMOJI, EVER.`;
+6. NO EMOJI, EVER.
+7. INTERNAL IDS NEVER REACH THE PAGE. The master profile uses anchors like EXP-ACME, PROJ-CLI, ANC-REPORTS, RES-DEV to make content traceable. They are addresses, not names. Print the real name of the company, the project or the story, never the identifier.`;
 
 export const VOICE = `VOICE. Write the way the candidate writes. A letter that sounds generated loses before it is read, and the em dash is only the most visible symptom.
 
@@ -37,6 +38,8 @@ Never do:
 | Semicolon | Full stop |
 | Em dash | Comma, colon or full stop |
 | "Two things brought me here", "The result that matters", "stated plainly" | Say the thing |
+| Stated enthusiasm ("I am eager to", "I am passionate about", "excited by the opportunity") | Say what he would do, or cut it |
+| Passive investigation voice ("the analysis revealed that") | "I found that" |
 
 These are judgement, not gates. Reread every draft and ask: would he write this sentence?`;
 
