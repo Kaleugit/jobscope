@@ -2,6 +2,29 @@ import type { ChangeEvent, RefObject } from "react";
 import type { Profile, SkillsSummary } from "../api";
 import { Dots } from "../common";
 
+function SkillRow({
+  skill,
+  maxCount,
+  hasProfile,
+}: {
+  skill: { name: string; count: number; owned: boolean };
+  maxCount: number;
+  hasProfile: boolean;
+}) {
+  return (
+    <li>
+      <span className="skill-name">{skill.name}</span>
+      <span className="skill-track">
+        <span
+          className={`skill-bar${hasProfile && !skill.owned ? " missing" : ""}`}
+          style={{ width: `${(skill.count / maxCount) * 100}%` }}
+        />
+      </span>
+      <span className="skill-count">{skill.count}</span>
+    </li>
+  );
+}
+
 interface HomeProps {
   profile: Profile | null;
   summary: SkillsSummary | null;
@@ -173,21 +196,34 @@ export function Home({
             )}
           </p>
           <ul className="skills">
-            {summary.skills.slice(0, 15).map((skill) => (
-              <li key={skill.name}>
-                <span className="skill-name">{skill.name}</span>
-                <span className="skill-track">
-                  <span
-                    className={`skill-bar${
-                      summary.hasProfile && !skill.owned ? " missing" : ""
-                    }`}
-                    style={{ width: `${(skill.count / maxCount) * 100}%` }}
-                  />
-                </span>
-                <span className="skill-count">{skill.count}</span>
-              </li>
+            {summary.skills.slice(0, 3).map((skill) => (
+              <SkillRow
+                key={skill.name}
+                skill={skill}
+                maxCount={maxCount}
+                hasProfile={summary.hasProfile}
+              />
             ))}
           </ul>
+
+          {summary.skills.length > 3 && (
+            <details className="skills-drawer">
+              <summary>
+                <span className="drawer-marker" aria-hidden="true" />
+                {summary.skills.length - 3} more
+              </summary>
+              <ul className="skills">
+                {summary.skills.slice(3).map((skill) => (
+                  <SkillRow
+                    key={skill.name}
+                    skill={skill}
+                    maxCount={maxCount}
+                    hasProfile={summary.hasProfile}
+                  />
+                ))}
+              </ul>
+            </details>
+          )}
         </section>
       )}
 

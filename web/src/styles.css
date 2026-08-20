@@ -481,8 +481,13 @@ textarea {
   content: "[-]";
 }
 
-.skills-drawer .tags {
+.skills-drawer .tags,
+.skills-drawer .skills {
   margin-top: 10px;
+}
+
+.skills + .skills-drawer {
+  margin-top: 14px;
 }
 
 /* ── skill gap dashboard ────────────────────────────────────────────── */
