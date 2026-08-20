@@ -1,13 +1,21 @@
-import { Clock } from "./common";
+import type { Session } from "./api";
 import { ROUTES, type Route } from "./useRoute";
 
-const LABELS: Record<Route, string> = {
+const LABELS: Record<string, string> = {
   home: "dashboard",
   applications: "applications",
   "cv-maker": "cv-maker",
 };
 
-export function Header({ route }: { route: Route }) {
+export function Header({
+  route,
+  session,
+  onSignOut,
+}: {
+  route: Route;
+  session: Session;
+  onSignOut: () => void;
+}) {
   return (
     <header className="site-header">
       <a className="brand" href="#/home">
@@ -36,7 +44,10 @@ export function Header({ route }: { route: Route }) {
         >
           github
         </a>
-        <Clock />
+        <span className="session-user">{session.username}</span>
+        <button type="button" className="ghost-btn" onClick={onSignOut}>
+          [sign out]
+        </button>
       </div>
     </header>
   );

@@ -8,6 +8,9 @@ import {
 } from "react";
 import {
   api,
+  loadSession,
+  saveSession,
+  Unauthorized,
   type Application,
   type ApplicationStatus,
   type GeneratedDocs,
@@ -17,13 +20,16 @@ import {
   type SkillsSummary,
 } from "./api";
 import { Header } from "./Header";
-import { useRoute } from "./useRoute";
+import { DEV_ROUTE, useRoute } from "./useRoute";
 import { Home } from "./pages/Home";
 import { Applications } from "./pages/Applications";
 import { CvMaker } from "./pages/CvMaker";
+import { Login } from "./pages/Login";
+import { Dev } from "./pages/Dev";
 
 export default function App() {
   const route = useRoute();
+  const [session, setSession] = useState(() => loadSession());
 
   const [apps, setApps] = useState<Application[] | null>(null);
   const [summary, setSummary] = useState<SkillsSummary | null>(null);
@@ -45,6 +51,7 @@ export default function App() {
   const tracked = apps?.find((a) => a.id === trackedId) ?? null;
 
   const refresh = useCallback(async () => {
+    if (!loadSession()) return;
     try {
       const [list, sum, prof, masterDoc, docList] = await Promise.all([
         api.list(),
@@ -66,14 +73,28 @@ export default function App() {
       setSummary(sum);
       setError("");
     } catch (e) {
+      if (e instanceof Unauthorized) {
+        setSession(null);
+        return;
+      }
       setError((e as Error).message);
       setApps((current) => current ?? []);
     }
   }, []);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    if (session) void refresh();
+  }, [session, refresh]);
+
+  function signOut() {
+    saveSession(null);
+    setSession(null);
+    setApps(null);
+    setSummary(null);
+    setProfile(null);
+    setMasters(null);
+    setDocs([]);
+  }
 
   // While the pipeline is extracting, poll for the result.
   useEffect(() => {
@@ -191,9 +212,18 @@ export default function App() {
     await refresh();
   }
 
+  if (!session) {
+    return (
+      <div className="frame">
+        <Login onSignedIn={setSession} />
+        <footer className="site-footer">developed by Kaleu-dev ® 2026</footer>
+      </div>
+    );
+  }
+
   return (
     <div className="frame">
-      <Header route={route} />
+      <Header route={route} session={session} onSignOut={signOut} />
 
       <main>
         {error && (
@@ -224,6 +254,8 @@ export default function App() {
             onDelete={onDelete}
           />
         )}
+
+        {route === DEV_ROUTE && <Dev session={session} />}
 
         {route === "cv-maker" && (
           <CvMaker

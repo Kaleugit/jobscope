@@ -108,6 +108,7 @@ export class JobscopeStack extends Stack {
         TABLE_NAME: table.tableName,
         ANALYZE_QUEUE_URL: analyzeQueue.queueUrl,
         RESUME_BUCKET: resumeBucket.bucketName,
+        TOKEN_SECRET: process.env.TOKEN_SECRET ?? "",
       },
     });
     table.grantReadWriteData(apiFn);
@@ -125,12 +126,17 @@ export class JobscopeStack extends Stack {
           CorsHttpMethod.DELETE,
           CorsHttpMethod.OPTIONS,
         ],
-        allowHeaders: ["Content-Type"],
+        allowHeaders: ["Content-Type", "Authorization"],
       },
     });
 
     const integration = new HttpLambdaIntegration("ApiIntegration", apiFn);
     const routes: [string, HttpMethod][] = [
+      ["/auth/login", HttpMethod.POST],
+      ["/auth/me", HttpMethod.GET],
+      ["/auth/accounts", HttpMethod.GET],
+      ["/auth/accounts", HttpMethod.POST],
+      ["/auth/accounts/{username}", HttpMethod.DELETE],
       ["/applications", HttpMethod.GET],
       ["/applications", HttpMethod.POST],
       ["/applications/{id}", HttpMethod.GET],

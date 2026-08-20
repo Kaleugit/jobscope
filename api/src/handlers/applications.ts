@@ -7,6 +7,7 @@ import {
   GetCommand,
   PutCommand,
   QueryCommand,
+  ScanCommand,
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
@@ -19,12 +20,25 @@ import {
   masterSk,
   PROFILE_SK,
   TABLE_NAME,
-  USER_PK,
+  userPk,
   type Application,
   type Market,
   type MasterProfile,
   type Profile,
 } from "../lib/db";
+import {
+  ACCOUNT_SK,
+  accountPk,
+  bearerFrom,
+  hashPassword,
+  isValidUsername,
+  issueToken,
+  newWorkspaceId,
+  normalizeUsername,
+  verifyPassword,
+  verifyToken,
+  type Account,
+} from "../lib/auth";
 
 const sqs = new SQSClient({});
 const s3 = new S3Client({});
@@ -47,18 +61,18 @@ function json(statusCode: number, body: unknown): APIGatewayProxyResultV2 {
   };
 }
 
-async function listApplications(): Promise<Application[]> {
+async function listApplications(pk: string): Promise<Application[]> {
   const result = await ddb.send(
     new QueryCommand({
       TableName: TABLE_NAME,
       KeyConditionExpression: "pk = :pk AND begins_with(sk, :sk)",
-      ExpressionAttributeValues: { ":pk": USER_PK, ":sk": "APP#" },
+      ExpressionAttributeValues: { ":pk": pk, ":sk": "APP#" },
     })
   );
   return (result.Items ?? []) as Application[];
 }
 
-async function createApplication(body: Record<string, unknown>) {
+async function createApplication(pk: string, workspace: string, body: Record<string, unknown>) {
   const url = String(body.url ?? "").trim();
   const jdText = typeof body.jdText === "string" ? body.jdText.trim() : "";
 
@@ -72,7 +86,7 @@ async function createApplication(body: Record<string, unknown>) {
   const id = randomUUID();
 
   const item: Application = {
-    pk: USER_PK,
+    pk,
     sk: `APP#${id}`,
     id,
     company: String(body.company ?? "").trim(),
@@ -94,6 +108,7 @@ async function createApplication(body: Record<string, unknown>) {
       new SendMessageCommand({
         QueueUrl: ANALYZE_QUEUE_URL,
         MessageBody: JSON.stringify({
+          workspace,
           id,
           url: url || undefined,
           jdText: jdText || undefined,
@@ -105,7 +120,7 @@ async function createApplication(body: Record<string, unknown>) {
   return json(201, item);
 }
 
-async function updateApplication(id: string, body: Record<string, unknown>) {
+async function updateApplication(pk: string, id: string, body: Record<string, unknown>) {
   const allowed = ["company", "role", "url", "status", "notes"] as const;
   const sets: string[] = ["updatedAt = :updatedAt"];
   const values: Record<string, unknown> = {
@@ -127,7 +142,7 @@ async function updateApplication(id: string, body: Record<string, unknown>) {
   const result = await ddb.send(
     new UpdateCommand({
       TableName: TABLE_NAME,
-      Key: { pk: USER_PK, sk: `APP#${id}` },
+      Key: { pk, sk: `APP#${id}` },
       UpdateExpression: `SET ${sets.join(", ")}`,
       ExpressionAttributeNames: Object.keys(names).length ? names : undefined,
       ExpressionAttributeValues: values,
@@ -139,11 +154,11 @@ async function updateApplication(id: string, body: Record<string, unknown>) {
   return json(200, result.Attributes);
 }
 
-async function getProfile(): Promise<Profile | undefined> {
+async function getProfile(pk: string): Promise<Profile | undefined> {
   const result = await ddb.send(
     new GetCommand({
       TableName: TABLE_NAME,
-      Key: { pk: USER_PK, sk: PROFILE_SK },
+      Key: { pk, sk: PROFILE_SK },
     })
   );
   return result.Item as Profile | undefined;
@@ -152,8 +167,8 @@ async function getProfile(): Promise<Profile | undefined> {
 // Skills come from two different LLM calls, so compare them loosely.
 const normalizeSkill = (s: string) => s.toLowerCase().replace(/[.\-_\s]/g, "");
 
-async function skillsSummary() {
-  const [apps, profile] = await Promise.all([listApplications(), getProfile()]);
+async function skillsSummary(pk: string) {
+  const [apps, profile] = await Promise.all([listApplications(pk), getProfile(pk)]);
 
   const counts = new Map<string, number>();
   for (const app of apps) {
@@ -231,7 +246,7 @@ async function createUploadUrl(body: Record<string, unknown>) {
   return json(200, { uploadUrl, key });
 }
 
-async function startResumeAnalysis(body: Record<string, unknown>) {
+async function startResumeAnalysis(pk: string, workspace: string, body: Record<string, unknown>) {
   const key = String(body.key ?? "").trim();
   const fileName = String(body.fileName ?? "").trim();
   const contentType = String(body.contentType ?? "").trim();
@@ -241,10 +256,10 @@ async function startResumeAnalysis(body: Record<string, unknown>) {
   }
 
   const now = new Date().toISOString();
-  const previous = await getProfile();
+  const previous = await getProfile(pk);
 
   const profile: Profile = {
-    pk: USER_PK,
+    pk,
     sk: PROFILE_SK,
     fileName,
     s3Key: key,
@@ -267,7 +282,7 @@ async function startResumeAnalysis(body: Record<string, unknown>) {
     await sqs.send(
       new SendMessageCommand({
         QueueUrl: ANALYZE_QUEUE_URL,
-        MessageBody: JSON.stringify({ kind: "resume", key, contentType }),
+        MessageBody: JSON.stringify({ kind: "resume", workspace, key, contentType }),
       })
     );
   }
@@ -283,19 +298,20 @@ function parseMarket(value: unknown): Market | undefined {
 }
 
 async function getMasterProfile(
+  pk: string,
   market: Market
 ): Promise<MasterProfile | undefined> {
   const result = await ddb.send(
     new GetCommand({
       TableName: TABLE_NAME,
-      Key: { pk: USER_PK, sk: masterSk(market) },
+      Key: { pk, sk: masterSk(market) },
     })
   );
   return result.Item as MasterProfile | undefined;
 }
 
-async function listMasterProfiles() {
-  const found = await Promise.all(MARKETS.map((m) => getMasterProfile(m)));
+async function listMasterProfiles(pk: string) {
+  const found = await Promise.all(MARKETS.map((m) => getMasterProfile(pk, m)));
   return json(
     200,
     Object.fromEntries(
@@ -318,7 +334,7 @@ async function listMasterProfiles() {
 }
 
 // The master profile is markdown, small enough to live in the item itself.
-async function putMasterProfile(body: Record<string, unknown>) {
+async function putMasterProfile(pk: string, body: Record<string, unknown>) {
   const market = parseMarket(body.market);
   const fileName = String(body.fileName ?? "").trim();
   const content = typeof body.content === "string" ? body.content : "";
@@ -332,7 +348,7 @@ async function putMasterProfile(body: Record<string, unknown>) {
   }
 
   const item: MasterProfile = {
-    pk: USER_PK,
+    pk,
     sk: masterSk(market),
     market,
     fileName,
@@ -349,7 +365,7 @@ async function putMasterProfile(body: Record<string, unknown>) {
   });
 }
 
-async function generateDocuments(body: Record<string, unknown>) {
+async function generateDocuments(pk: string, workspace: string, body: Record<string, unknown>) {
   const applicationId = String(body.applicationId ?? "").trim();
   const market = parseMarket(body.market);
   if (!applicationId) return json(400, { error: "applicationId is required" });
@@ -359,10 +375,10 @@ async function generateDocuments(body: Record<string, unknown>) {
     ddb.send(
       new GetCommand({
         TableName: TABLE_NAME,
-        Key: { pk: USER_PK, sk: `APP#${applicationId}` },
+        Key: { pk, sk: `APP#${applicationId}` },
       })
     ),
-    getMasterProfile(market),
+    getMasterProfile(pk, market),
   ]);
 
   const app = appResult.Item as Application | undefined;
@@ -376,7 +392,7 @@ async function generateDocuments(body: Record<string, unknown>) {
 
   const now = new Date().toISOString();
   const item = {
-    pk: USER_PK,
+    pk,
     sk: `DOCS#${applicationId}`,
     applicationId,
     company: app.company,
@@ -394,6 +410,7 @@ async function generateDocuments(body: Record<string, unknown>) {
         QueueUrl: ANALYZE_QUEUE_URL,
         MessageBody: JSON.stringify({
           kind: "docs",
+          workspace,
           applicationId,
           market,
           lang: typeof body.lang === "string" ? body.lang : undefined,
@@ -405,19 +422,19 @@ async function generateDocuments(body: Record<string, unknown>) {
   return json(202, item);
 }
 
-async function listDocuments() {
+async function listDocuments(pk: string) {
   const result = await ddb.send(
     new QueryCommand({
       TableName: TABLE_NAME,
       KeyConditionExpression: "pk = :pk AND begins_with(sk, :sk)",
-      ExpressionAttributeValues: { ":pk": USER_PK, ":sk": "DOCS#" },
+      ExpressionAttributeValues: { ":pk": pk, ":sk": "DOCS#" },
     })
   );
   return json(200, result.Items ?? []);
 }
 
-async function deleteProfile() {
-  const profile = await getProfile();
+async function deleteProfile(pk: string) {
+  const profile = await getProfile(pk);
   if (profile?.s3Key) {
     await s3
       .send(
@@ -428,10 +445,107 @@ async function deleteProfile() {
   await ddb.send(
     new DeleteCommand({
       TableName: TABLE_NAME,
-      Key: { pk: USER_PK, sk: PROFILE_SK },
+      Key: { pk, sk: PROFILE_SK },
     })
   );
   return json(204, {});
+}
+
+async function login(body: Record<string, unknown>) {
+  const username = normalizeUsername(body.username);
+  const password = String(body.password ?? "");
+  if (!username || !password) {
+    return json(400, { error: "username and password are required" });
+  }
+
+  const result = await ddb.send(
+    new GetCommand({
+      TableName: TABLE_NAME,
+      Key: { pk: accountPk(username), sk: ACCOUNT_SK },
+    })
+  );
+  const account = result.Item as Account | undefined;
+
+  // Same answer either way, so the response does not reveal which usernames exist.
+  if (!account || !verifyPassword(password, account.passwordHash)) {
+    return json(401, { error: "invalid username or password" });
+  }
+
+  await ddb.send(
+    new UpdateCommand({
+      TableName: TABLE_NAME,
+      Key: { pk: accountPk(username), sk: ACCOUNT_SK },
+      UpdateExpression: "SET lastLoginAt = :now",
+      ExpressionAttributeValues: { ":now": new Date().toISOString() },
+    })
+  );
+
+  return json(200, {
+    token: issueToken(account),
+    username: account.username,
+    role: account.role,
+  });
+}
+
+async function createAccount(body: Record<string, unknown>) {
+  const username = normalizeUsername(body.username);
+  const password = String(body.password ?? "");
+  const role = body.role === "dev" ? "dev" : "user";
+
+  if (!isValidUsername(username)) {
+    return json(400, {
+      error: "username must be 3 to 32 characters: letters, digits, dot, dash or underscore",
+    });
+  }
+  if (password.length < 8) {
+    return json(400, { error: "password must be at least 8 characters" });
+  }
+
+  const account: Account = {
+    pk: accountPk(username),
+    sk: ACCOUNT_SK,
+    username,
+    passwordHash: hashPassword(password),
+    workspace: newWorkspaceId(),
+    role,
+    note: typeof body.note === "string" ? body.note.trim() : undefined,
+    createdAt: new Date().toISOString(),
+  };
+
+  try {
+    await ddb.send(
+      new PutCommand({
+        TableName: TABLE_NAME,
+        Item: account,
+        ConditionExpression: "attribute_not_exists(pk)",
+      })
+    );
+  } catch (error) {
+    if ((error as Error).name === "ConditionalCheckFailedException") {
+      return json(409, { error: "that username is taken" });
+    }
+    throw error;
+  }
+
+  return json(201, {
+    username: account.username,
+    role: account.role,
+    note: account.note,
+    createdAt: account.createdAt,
+  });
+}
+
+async function listAccounts() {
+  const result = await ddb.send(
+    new ScanCommand({
+      TableName: TABLE_NAME,
+      FilterExpression: "sk = :sk",
+      ExpressionAttributeValues: { ":sk": ACCOUNT_SK },
+      ProjectionExpression: "username, #role, note, createdAt, lastLoginAt",
+      ExpressionAttributeNames: { "#role": "role" },
+    })
+  );
+  return json(200, result.Items ?? []);
 }
 
 export async function handler(
@@ -448,16 +562,58 @@ export async function handler(
   }
 
   try {
+    if (event.routeKey === "POST /auth/login") {
+      return await login(body);
+    }
+
+    // Everything past this point belongs to one account's workspace.
+    const session = verifyToken(bearerFrom(event.headers ?? {}));
+    if (!session) {
+      return json(401, { error: "sign in to continue" });
+    }
+    const pk = userPk(session.workspace);
+
+    if (event.routeKey.endsWith("/auth/accounts") || event.routeKey.includes("/auth/accounts/")) {
+      if (session.role !== "dev") {
+        return json(403, { error: "developer access only" });
+      }
+    }
+
+    switch (event.routeKey) {
+      case "GET /auth/me":
+        return json(200, {
+          username: session.username,
+          role: session.role,
+        });
+      case "GET /auth/accounts":
+        return await listAccounts();
+      case "POST /auth/accounts":
+        return await createAccount(body);
+      case "DELETE /auth/accounts/{username}": {
+        const username = normalizeUsername(event.pathParameters?.username);
+        if (username === session.username) {
+          return json(400, { error: "you cannot delete your own account" });
+        }
+        await ddb.send(
+          new DeleteCommand({
+            TableName: TABLE_NAME,
+            Key: { pk: accountPk(username), sk: ACCOUNT_SK },
+          })
+        );
+        return json(204, {});
+      }
+    }
+
     switch (event.routeKey) {
       case "GET /applications":
-        return json(200, await listApplications());
+        return json(200, await listApplications(pk));
       case "POST /applications":
-        return await createApplication(body);
+        return await createApplication(pk, session.workspace, body);
       case "GET /applications/{id}": {
         const result = await ddb.send(
           new GetCommand({
             TableName: TABLE_NAME,
-            Key: { pk: USER_PK, sk: `APP#${id}` },
+            Key: { pk, sk: `APP#${id}` },
           })
         );
         return result.Item
@@ -465,51 +621,51 @@ export async function handler(
           : json(404, { error: "not found" });
       }
       case "PATCH /applications/{id}":
-        return await updateApplication(id, body);
+        return await updateApplication(pk, id, body);
       case "DELETE /applications/{id}":
         await ddb.send(
           new DeleteCommand({
             TableName: TABLE_NAME,
-            Key: { pk: USER_PK, sk: `APP#${id}` },
+            Key: { pk, sk: `APP#${id}` },
           })
         );
         return json(204, {});
       case "GET /skills/summary":
-        return await skillsSummary();
+        return await skillsSummary(pk);
       case "GET /profile": {
-        const profile = await getProfile();
+        const profile = await getProfile(pk);
         return json(200, profile ?? null);
       }
       case "POST /profile/upload-url":
         return await createUploadUrl(body);
       case "POST /profile/analyze":
-        return await startResumeAnalysis(body);
+        return await startResumeAnalysis(pk, session.workspace, body);
       case "DELETE /profile":
-        return await deleteProfile();
+        return await deleteProfile(pk);
       case "GET /master":
-        return await listMasterProfiles();
+        return await listMasterProfiles(pk);
       case "PUT /master":
-        return await putMasterProfile(body);
+        return await putMasterProfile(pk, body);
       case "DELETE /master/{market}": {
         const market = parseMarket(event.pathParameters?.market);
         if (!market) return json(400, { error: "unknown market" });
         await ddb.send(
           new DeleteCommand({
             TableName: TABLE_NAME,
-            Key: { pk: USER_PK, sk: masterSk(market) },
+            Key: { pk, sk: masterSk(market) },
           })
         );
         return json(204, {});
       }
       case "GET /docs":
-        return await listDocuments();
+        return await listDocuments(pk);
       case "POST /docs":
-        return await generateDocuments(body);
+        return await generateDocuments(pk, session.workspace, body);
       case "DELETE /docs/{id}":
         await ddb.send(
           new DeleteCommand({
             TableName: TABLE_NAME,
-            Key: { pk: USER_PK, sk: `DOCS#${id}` },
+            Key: { pk, sk: `DOCS#${id}` },
           })
         );
         return json(204, {});

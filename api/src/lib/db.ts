@@ -3,9 +3,20 @@ import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 
 export const TABLE_NAME = process.env.TABLE_NAME ?? "";
 
-// Single-table design: pk = USER#<userId>, sk = APP#<applicationId>.
-// userId is fixed until Cognito auth is added (phase 5).
-export const USER_PK = "USER#default";
+// Single-table design: pk = USER#<workspace>, sk = APP#<applicationId>.
+//
+// Every visitor gets their own workspace id, generated in the browser and sent
+// on each request, so anyone can try the app with a blank slate without seeing
+// (or touching) someone else's data. The id is a capability: whoever holds it
+// reaches that workspace, which is the trade this project accepts in exchange
+// for having no sign-up wall in front of a portfolio piece.
+export const userPk = (workspace: string) => `USER#${workspace}`;
+
+const WORKSPACE_PATTERN = /^[A-Za-z0-9_-]{8,64}$/;
+
+export function isValidWorkspace(value: unknown): value is string {
+  return typeof value === "string" && WORKSPACE_PATTERN.test(value);
+}
 
 const client = new DynamoDBClient({});
 

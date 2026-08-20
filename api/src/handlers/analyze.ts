@@ -6,7 +6,7 @@ import {
   masterSk,
   PROFILE_SK,
   TABLE_NAME,
-  USER_PK,
+  userPk,
   type Application,
   type Market,
   type MasterProfile,
@@ -32,6 +32,7 @@ const RESUME_BUCKET = process.env.RESUME_BUCKET ?? "";
 
 interface JobMessage {
   kind?: "job";
+  workspace: string;
   id: string;
   url?: string;
   jdText?: string;
@@ -39,12 +40,14 @@ interface JobMessage {
 
 interface ResumeMessage {
   kind: "resume";
+  workspace: string;
   key: string;
   contentType?: string;
 }
 
 interface DocsMessage {
   kind: "docs";
+  workspace: string;
   applicationId: string;
   market: Market;
   lang?: string;
@@ -53,6 +56,7 @@ interface DocsMessage {
 type AnalyzeMessage = JobMessage | ResumeMessage | DocsMessage;
 
 async function saveResult(
+  pk: string,
   id: string,
   result: { info?: JobInfo; analysisStatus: "done" | "failed" }
 ) {
@@ -73,7 +77,7 @@ async function saveResult(
     await ddb.send(
       new UpdateCommand({
         TableName: TABLE_NAME,
-        Key: { pk: USER_PK, sk: `APP#${id}` },
+        Key: { pk: pk, sk: `APP#${id}` },
         UpdateExpression: `SET ${sets.join(", ")}`,
         // Without this, updating a deleted item would resurrect a ghost row.
         ConditionExpression: "attribute_exists(pk)",
@@ -91,6 +95,7 @@ async function saveResult(
 }
 
 async function saveProfileResult(
+  pk: string,
   fields: Record<string, unknown>,
   analysisStatus: "done" | "failed"
 ) {
@@ -112,7 +117,7 @@ async function saveProfileResult(
     await ddb.send(
       new UpdateCommand({
         TableName: TABLE_NAME,
-        Key: { pk: USER_PK, sk: PROFILE_SK },
+        Key: { pk: pk, sk: PROFILE_SK },
         UpdateExpression: `SET ${sets.join(", ")}`,
         ConditionExpression: "attribute_exists(pk)",
         ExpressionAttributeNames: Object.keys(names).length ? names : undefined,
@@ -129,6 +134,7 @@ async function saveProfileResult(
 }
 
 async function analyzeResume(message: ResumeMessage) {
+  const pk = userPk(message.workspace);
   const object = await s3.send(
     new GetObjectCommand({ Bucket: RESUME_BUCKET, Key: message.key })
   );
@@ -139,6 +145,7 @@ async function analyzeResume(message: ResumeMessage) {
 
   const profile = await extractResumeProfile(base64, mimeType);
   await saveProfileResult(
+    pk,
     {
       name: profile.name,
       title: profile.title,
@@ -153,6 +160,7 @@ async function analyzeResume(message: ResumeMessage) {
 }
 
 async function saveDocsResult(
+  pk: string,
   applicationId: string,
   fields: Record<string, unknown>,
   status: "done" | "failed"
@@ -175,7 +183,7 @@ async function saveDocsResult(
     await ddb.send(
       new UpdateCommand({
         TableName: TABLE_NAME,
-        Key: { pk: USER_PK, sk: `DOCS#${applicationId}` },
+        Key: { pk: pk, sk: `DOCS#${applicationId}` },
         UpdateExpression: `SET ${sets.join(", ")}`,
         ConditionExpression: "attribute_exists(pk)",
         ExpressionAttributeNames: names,
@@ -199,17 +207,18 @@ const MAX_GENERATION_ATTEMPTS = 3;
  * knows how much to cut instead of guessing.
  */
 async function buildDocuments(message: DocsMessage) {
+  const pk = userPk(message.workspace);
   const [appResult, masterResult] = await Promise.all([
     ddb.send(
       new GetCommand({
         TableName: TABLE_NAME,
-        Key: { pk: USER_PK, sk: `APP#${message.applicationId}` },
+        Key: { pk: pk, sk: `APP#${message.applicationId}` },
       })
     ),
     ddb.send(
       new GetCommand({
         TableName: TABLE_NAME,
-        Key: { pk: USER_PK, sk: masterSk(message.market) },
+        Key: { pk: pk, sk: masterSk(message.market) },
       })
     ),
   ]);
@@ -289,6 +298,7 @@ async function buildDocuments(message: DocsMessage) {
     : "Cover Letter";
 
   await saveDocsResult(
+    pk,
     message.applicationId,
     {
       market: message.market,
@@ -343,7 +353,7 @@ export async function handler(event: SQSEvent): Promise<SQSBatchResponse> {
           url: message.url,
           jdText: message.jdText,
         });
-        await saveResult(message.id, { info, analysisStatus: "done" });
+        await saveResult(userPk(message.workspace), message.id, { info, analysisStatus: "done" });
         console.log(
           `Analyzed ${message.id}: ${info.company} / ${info.role} / ${info.skills.length} skills`
         );
@@ -354,15 +364,16 @@ export async function handler(event: SQSEvent): Promise<SQSBatchResponse> {
       // message lands in the DLQ and we mark the item as failed.
       if (lastAttempt) {
         if (message.kind === "resume") {
-          await saveProfileResult({}, "failed");
+          await saveProfileResult(userPk(message.workspace), {}, "failed");
         } else if (message.kind === "docs") {
           await saveDocsResult(
+            userPk(message.workspace),
             message.applicationId,
             { error: (error as Error).message.slice(0, 300) },
             "failed"
           );
         } else {
-          await saveResult(message.id, { analysisStatus: "failed" });
+          await saveResult(userPk(message.workspace), message.id, { analysisStatus: "failed" });
         }
       } else {
         failures.push({ itemIdentifier: record.messageId });

@@ -90,11 +90,45 @@ export interface GeneratedDocs {
   createdAt: string;
 }
 
+export interface Session {
+  token: string;
+  username: string;
+  role: "dev" | "user";
+}
+
+const TOKEN_KEY = "jobscope.session";
+
+export function loadSession(): Session | null {
+  try {
+    const raw = localStorage.getItem(TOKEN_KEY);
+    return raw ? (JSON.parse(raw) as Session) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveSession(session: Session | null) {
+  if (session) localStorage.setItem(TOKEN_KEY, JSON.stringify(session));
+  else localStorage.removeItem(TOKEN_KEY);
+}
+
+/** Thrown when the token is missing or expired, so the UI can show the login. */
+export class Unauthorized extends Error {}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const session = loadSession();
   const res = await fetch(`${API_URL}${path}`, {
-    headers: { "Content-Type": "application/json" },
     ...init,
+    headers: {
+      "Content-Type": "application/json",
+      ...(session ? { Authorization: `Bearer ${session.token}` } : {}),
+      ...(init?.headers ?? {}),
+    },
   });
+  if (res.status === 401) {
+    saveSession(null);
+    throw new Unauthorized("sign in to continue");
+  }
   if (!res.ok) {
     const body = await res.text();
     throw new Error(`API ${res.status}: ${body}`);
@@ -102,7 +136,37 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.status === 204 ? (undefined as T) : ((await res.json()) as T);
 }
 
+export interface AccountSummary {
+  username: string;
+  role: "dev" | "user";
+  note?: string;
+  createdAt: string;
+  lastLoginAt?: string;
+}
+
 export const api = {
+  login: (username: string, password: string) =>
+    request<Session>("/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ username, password }),
+    }),
+
+  accounts: () => request<AccountSummary[]>("/auth/accounts"),
+
+  createAccount: (data: {
+    username: string;
+    password: string;
+    role?: "dev" | "user";
+    note?: string;
+  }) =>
+    request<AccountSummary>("/auth/accounts", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  deleteAccount: (username: string) =>
+    request<void>(`/auth/accounts/${username}`, { method: "DELETE" }),
+
   list: () => request<Application[]>("/applications"),
   create: (data: { url: string; status?: ApplicationStatus }) =>
     request<Application>("/applications", {
