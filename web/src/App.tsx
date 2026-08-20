@@ -26,10 +26,14 @@ import { Applications } from "./pages/Applications";
 import { CvMaker } from "./pages/CvMaker";
 import { Login } from "./pages/Login";
 import { Dev } from "./pages/Dev";
+import { Onboarding, shouldOnboard } from "./Onboarding";
 
 export default function App() {
   const route = useRoute();
   const [session, setSession] = useState(() => loadSession());
+  const [showTour, setShowTour] = useState(
+    () => !!session && shouldOnboard(session.username)
+  );
 
   const [apps, setApps] = useState<Application[] | null>(null);
   const [summary, setSummary] = useState<SkillsSummary | null>(null);
@@ -225,7 +229,12 @@ export default function App() {
   if (!session) {
     return (
       <div className="frame">
-        <Login onSignedIn={setSession} />
+        <Login
+          onSignedIn={(next) => {
+            setSession(next);
+            setShowTour(shouldOnboard(next.username));
+          }}
+        />
         <footer className="site-footer">developed by Kaleu-dev ® 2026</footer>
       </div>
     );
@@ -233,7 +242,19 @@ export default function App() {
 
   return (
     <div className="frame">
-      <Header route={route} session={session} onSignOut={signOut} />
+      <Header
+        route={route}
+        session={session}
+        onSignOut={signOut}
+        onHelp={() => setShowTour(true)}
+      />
+
+      {showTour && (
+        <Onboarding
+          username={session.username}
+          onClose={() => setShowTour(false)}
+        />
+      )}
 
       <main>
         {error && (

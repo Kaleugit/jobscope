@@ -11,10 +11,12 @@ export function Header({
   route,
   session,
   onSignOut,
+  onHelp,
 }: {
   route: Route;
   session: Session;
   onSignOut: () => void;
+  onHelp: () => void;
 }) {
   return (
     <header className="site-header">
@@ -44,6 +46,15 @@ export function Header({
         >
           github
         </a>
+        <button
+          type="button"
+          className="ghost-btn help-btn"
+          onClick={onHelp}
+          title="How to use Jobscope"
+          aria-label="How to use Jobscope"
+        >
+          [?]
+        </button>
         <span className="session-user">{session.username}</span>
         <button type="button" className="ghost-btn" onClick={onSignOut}>
           [sign out]

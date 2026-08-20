@@ -93,6 +93,73 @@ a:hover {
   color: var(--text);
 }
 
+/* ── onboarding tour ────────────────────────────────────────────────── */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgb(0 0 0 / 0.72);
+}
+
+.tour {
+  width: 100%;
+  max-width: 460px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 26px 28px 22px;
+}
+
+.tour-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+}
+
+.tour-head .block-label {
+  margin: 0;
+}
+
+.tour-count {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.tour-title {
+  margin: 16px 0 8px;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.tour-body {
+  margin: 0;
+  color: var(--text);
+  max-width: 46ch;
+}
+
+.tour-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-top: 26px;
+}
+
+.tour-hint {
+  margin: 16px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.help-btn {
+  padding: 6px 2px;
+}
+
 /* ── site header ────────────────────────────────────────────────────── */
 
 .site-header {
