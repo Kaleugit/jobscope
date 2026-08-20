@@ -169,6 +169,8 @@ export default function App() {
 
         {route === "cv-maker" && <CvMaker profile={profile} summary={summary} />}
       </main>
+
+      <footer className="site-footer">developed by Kaleu-dev ® 2026</footer>
     </div>
   );
 }

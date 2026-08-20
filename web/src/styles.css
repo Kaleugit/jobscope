@@ -700,6 +700,16 @@ textarea {
   }
 }
 
+/* ── footer ─────────────────────────────────────────────────────────── */
+
+.site-footer {
+  border-top: 1px solid var(--line-soft);
+  margin-top: 48px;
+  padding: 22px 32px 28px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
 /* ── mobile collapse ────────────────────────────────────────────────── */
 
 @media (max-width: 767px) {
@@ -738,6 +748,10 @@ textarea {
   }
   .hero-mark {
     width: 72px;
+  }
+
+  .site-footer {
+    padding: 20px;
   }
 
   .block {
