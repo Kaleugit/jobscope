@@ -97,12 +97,12 @@ a:hover {
 
 .hero-mark {
   width: 112px;
-  height: 112px;
+  height: auto;
   flex-shrink: 0;
 }
 
 .hero-text {
-  text-align: left;
+  text-align: center;
 }
 
 .hero h1 {

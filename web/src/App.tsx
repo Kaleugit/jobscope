@@ -161,7 +161,7 @@ export default function App() {
 
       <main>
         <section className="hero">
-          <img className="hero-mark" src="/mark.png" alt="" width={112} height={112} />
+          <img className="hero-mark" src="/mark.jpg" alt="" width={112} height={108} />
           <div className="hero-text">
             <h1>{"<Jobscope>"}</h1>
             <p className="hero-sub">{"//job application tracker"}</p>
