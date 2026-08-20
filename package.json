@@ -1,0 +1,20 @@
+{
+  "name": "jobscope",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Job application tracker with AI-powered skill-gap analytics, built on AWS serverless (CDK, Lambda, DynamoDB, S3/CloudFront).",
+  "workspaces": [
+    "infra",
+    "api",
+    "web"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "typecheck": "npm run typecheck --workspaces",
+    "dev:web": "npm run dev --workspace web",
+    "deploy": "npm run build --workspace web && npm run cdk -- deploy --workspace infra"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
