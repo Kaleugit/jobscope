@@ -144,7 +144,7 @@ export class JobscopeStack extends Stack {
       ["/profile/analyze", HttpMethod.POST],
       ["/master", HttpMethod.GET],
       ["/master", HttpMethod.PUT],
-      ["/master", HttpMethod.DELETE],
+      ["/master/{market}", HttpMethod.DELETE],
       ["/docs", HttpMethod.GET],
       ["/docs", HttpMethod.POST],
       ["/docs/{id}", HttpMethod.DELETE],

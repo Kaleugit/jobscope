@@ -11,7 +11,8 @@ import {
   type Application,
   type ApplicationStatus,
   type GeneratedDocs,
-  type MasterProfile,
+  type Market,
+  type MasterProfiles,
   type Profile,
   type SkillsSummary,
 } from "./api";
@@ -31,7 +32,8 @@ export default function App() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [trackedId, setTrackedId] = useState<string | null>(null);
-  const [master, setMaster] = useState<MasterProfile | null>(null);
+  const [masters, setMasters] = useState<MasterProfiles | null>(null);
+  const [market, setMarket] = useState<Market>("latam");
   const [docs, setDocs] = useState<GeneratedDocs[]>([]);
   const [uploadingMaster, setUploadingMaster] = useState(false);
   const [generating, setGenerating] = useState<string | null>(null);
@@ -52,7 +54,7 @@ export default function App() {
         api.docs(),
       ]);
       setProfile(prof);
-      setMaster(masterDoc);
+      setMasters(masterDoc);
       setDocs(
         docList.sort((a, b) =>
           (b.createdAt ?? "").localeCompare(a.createdAt ?? "")
@@ -92,7 +94,8 @@ export default function App() {
     setUploadingMaster(true);
     setError("");
     try {
-      setMaster(await api.putMaster(file));
+      const saved = await api.putMaster(market, file);
+      setMasters((current) => ({ ...(current ?? { latam: null, fin: null }), [market]: saved }));
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -101,16 +104,16 @@ export default function App() {
   }
 
   async function onDeleteMaster() {
-    if (!confirm("Delete the master profile?")) return;
-    await api.deleteMaster();
-    setMaster(null);
+    if (!confirm(`Delete the ${market} master profile?`)) return;
+    await api.deleteMaster(market);
+    setMasters((current) => ({ ...(current ?? { latam: null, fin: null }), [market]: null }));
   }
 
-  async function onGenerateDocs(applicationId: string, lang?: string) {
+  async function onGenerateDocs(applicationId: string) {
     setGenerating(applicationId);
     setError("");
     try {
-      await api.generateDocs(applicationId, lang);
+      await api.generateDocs(applicationId, market);
       await refresh();
     } catch (e) {
       setError((e as Error).message);
@@ -225,10 +228,12 @@ export default function App() {
         {route === "cv-maker" && (
           <CvMaker
             apps={apps}
-            master={master}
+            masters={masters}
+            market={market}
             docs={docs}
             generating={generating}
             uploadingMaster={uploadingMaster}
+            onMarketChange={setMarket}
             onUploadMaster={onUploadMaster}
             onDeleteMaster={onDeleteMaster}
             onGenerate={onGenerateDocs}

@@ -165,8 +165,29 @@ export const OUTPUT_CONTRACT = `OUTPUT. Return ONLY a JSON object with these key
   "gapsNoRoom": ["requirements he has but that did not fit"]
 }`;
 
+const MARKET_LATAM = `MARKET: Latin America and remote international.
+
+- Availability and engagement model belong in P4 when the posting is remote or international: contractor terms, invoicing currency, and the hours of overlap with the team's timezone. Take them from the master profile, never invent them.
+- No visa or work permit paragraph unless the posting is for another country and the master profile says something about it.
+- Keep the deliverables in the language of the posting. Portuguese postings get Portuguese deliverables.`;
+
+const MARKET_FIN = `MARKET: Finland.
+
+Finnish employers weigh stability and transparency, so what looks like a weakness elsewhere is an asset here. Every application addresses three pillars: can he do the job, why does he want THIS company and role, and what is he like as a co-worker (language belongs to this one).
+
+P4 of the cover letter carries three disclosures, compressed and stated plainly, all taken from the master profile:
+1. Work authorization: current status and the concrete next step, framed as a manageable administrative step rather than an obstacle.
+2. Finnish level, stated honestly, with the commitment to learn. Never skip this.
+3. Where he already lives and his availability. Being in the country already is a concrete advantage and should be said.
+
+Also for this market:
+- Name the gap. When the posting asks for something he does not have, say so directly in P4 instead of hiding it. Honesty is a competitive advantage here.
+- A non-software background section (construction, field or installation work) is included only when the role actually involves that kind of work, and it never inflates the role he played.
+- Strictly one to two pages is the local norm, and this tool holds the tighter line at one.`;
+
 export function buildGenerationPrompt(input: {
   masterProfile: string;
+  market: "latam" | "fin";
   jobUrl?: string;
   company: string;
   role: string;
@@ -182,6 +203,7 @@ export function buildGenerationPrompt(input: {
     VOICE,
     RESUME_SPEC,
     LETTER_SPEC,
+    input.market === "fin" ? MARKET_FIN : MARKET_LATAM,
     OUTPUT_CONTRACT,
     `TODAY: ${input.today}`,
     input.langOverride

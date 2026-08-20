@@ -15,11 +15,13 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { randomUUID } from "node:crypto";
 import {
   ddb,
-  MASTER_SK,
+  MARKETS,
+  masterSk,
   PROFILE_SK,
   TABLE_NAME,
   USER_PK,
   type Application,
+  type Market,
   type MasterProfile,
   type Profile,
 } from "../lib/db";
@@ -273,21 +275,55 @@ async function startResumeAnalysis(body: Record<string, unknown>) {
   return json(202, profile);
 }
 
-async function getMasterProfile(): Promise<MasterProfile | undefined> {
+function parseMarket(value: unknown): Market | undefined {
+  const market = String(value ?? "").trim();
+  return (MARKETS as readonly string[]).includes(market)
+    ? (market as Market)
+    : undefined;
+}
+
+async function getMasterProfile(
+  market: Market
+): Promise<MasterProfile | undefined> {
   const result = await ddb.send(
     new GetCommand({
       TableName: TABLE_NAME,
-      Key: { pk: USER_PK, sk: MASTER_SK },
+      Key: { pk: USER_PK, sk: masterSk(market) },
     })
   );
   return result.Item as MasterProfile | undefined;
 }
 
+async function listMasterProfiles() {
+  const found = await Promise.all(MARKETS.map((m) => getMasterProfile(m)));
+  return json(
+    200,
+    Object.fromEntries(
+      MARKETS.map((market, i) => {
+        const item = found[i];
+        return [
+          market,
+          item
+            ? {
+                market,
+                fileName: item.fileName,
+                uploadedAt: item.uploadedAt,
+                size: item.content.length,
+              }
+            : null,
+        ];
+      })
+    )
+  );
+}
+
 // The master profile is markdown, small enough to live in the item itself.
 async function putMasterProfile(body: Record<string, unknown>) {
+  const market = parseMarket(body.market);
   const fileName = String(body.fileName ?? "").trim();
   const content = typeof body.content === "string" ? body.content : "";
 
+  if (!market) return json(400, { error: `market must be one of: ${MARKETS.join(", ")}` });
   if (!fileName || content.trim().length < 200) {
     return json(400, { error: "fileName and a non-trivial content are required" });
   }
@@ -297,19 +333,27 @@ async function putMasterProfile(body: Record<string, unknown>) {
 
   const item: MasterProfile = {
     pk: USER_PK,
-    sk: MASTER_SK,
+    sk: masterSk(market),
+    market,
     fileName,
     content,
     uploadedAt: new Date().toISOString(),
   };
   await ddb.send(new PutCommand({ TableName: TABLE_NAME, Item: item }));
 
-  return json(200, { fileName, uploadedAt: item.uploadedAt, size: content.length });
+  return json(200, {
+    market,
+    fileName,
+    uploadedAt: item.uploadedAt,
+    size: content.length,
+  });
 }
 
 async function generateDocuments(body: Record<string, unknown>) {
   const applicationId = String(body.applicationId ?? "").trim();
+  const market = parseMarket(body.market);
   if (!applicationId) return json(400, { error: "applicationId is required" });
+  if (!market) return json(400, { error: `market must be one of: ${MARKETS.join(", ")}` });
 
   const [appResult, master] = await Promise.all([
     ddb.send(
@@ -318,7 +362,7 @@ async function generateDocuments(body: Record<string, unknown>) {
         Key: { pk: USER_PK, sk: `APP#${applicationId}` },
       })
     ),
-    getMasterProfile(),
+    getMasterProfile(market),
   ]);
 
   const app = appResult.Item as Application | undefined;
@@ -327,7 +371,7 @@ async function generateDocuments(body: Record<string, unknown>) {
     return json(409, { error: "this application has not been analyzed yet" });
   }
   if (!master) {
-    return json(409, { error: "upload your master profile first" });
+    return json(409, { error: `upload the ${market} master profile first` });
   }
 
   const now = new Date().toISOString();
@@ -337,6 +381,7 @@ async function generateDocuments(body: Record<string, unknown>) {
     applicationId,
     company: app.company,
     role: app.role,
+    market,
     status: "pending" as const,
     createdAt: now,
     updatedAt: now,
@@ -350,6 +395,7 @@ async function generateDocuments(body: Record<string, unknown>) {
         MessageBody: JSON.stringify({
           kind: "docs",
           applicationId,
+          market,
           lang: typeof body.lang === "string" ? body.lang : undefined,
         }),
       })
@@ -440,29 +486,21 @@ export async function handler(
         return await startResumeAnalysis(body);
       case "DELETE /profile":
         return await deleteProfile();
-      case "GET /master": {
-        const master = await getMasterProfile();
-        return json(
-          200,
-          master
-            ? {
-                fileName: master.fileName,
-                uploadedAt: master.uploadedAt,
-                size: master.content.length,
-              }
-            : null
-        );
-      }
+      case "GET /master":
+        return await listMasterProfiles();
       case "PUT /master":
         return await putMasterProfile(body);
-      case "DELETE /master":
+      case "DELETE /master/{market}": {
+        const market = parseMarket(event.pathParameters?.market);
+        if (!market) return json(400, { error: "unknown market" });
         await ddb.send(
           new DeleteCommand({
             TableName: TABLE_NAME,
-            Key: { pk: USER_PK, sk: MASTER_SK },
+            Key: { pk: USER_PK, sk: masterSk(market) },
           })
         );
         return json(204, {});
+      }
       case "GET /docs":
         return await listDocuments();
       case "POST /docs":

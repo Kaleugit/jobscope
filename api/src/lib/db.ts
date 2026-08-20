@@ -36,13 +36,20 @@ export interface Profile {
   updatedAt: string;
 }
 
-export const MASTER_SK = "MASTER";
+/** Each market keeps its own master profile: the LATAM one is contractor and
+ *  timezone oriented, the Finnish one carries the visa, language and location
+ *  disclosures that market expects. */
+export const MARKETS = ["latam", "fin"] as const;
+export type Market = (typeof MARKETS)[number];
+
+export const masterSk = (market: Market) => `MASTER#${market}`;
 
 /** The single source of truth for generated documents. Nothing outside it may
  *  appear in a resume or a cover letter. */
 export interface MasterProfile {
   pk: string;
   sk: string;
+  market: Market;
   fileName: string;
   content: string;
   uploadedAt: string;
@@ -54,6 +61,7 @@ export interface GeneratedDocsItem {
   applicationId: string;
   company: string;
   role: string;
+  market?: Market;
   lang?: string;
   recipient?: string;
   resumeHtml?: string;

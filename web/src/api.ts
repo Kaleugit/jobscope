@@ -51,16 +51,28 @@ export interface SkillsSummary {
   averageMatch: number;
 }
 
+export const MARKETS = ["latam", "fin"] as const;
+export type Market = (typeof MARKETS)[number];
+
+export const MARKET_LABELS: Record<Market, string> = {
+  latam: "latam / remote",
+  fin: "finland",
+};
+
 export interface MasterProfile {
+  market: Market;
   fileName: string;
   uploadedAt: string;
   size: number;
 }
 
+export type MasterProfiles = Record<Market, MasterProfile | null>;
+
 export interface GeneratedDocs {
   applicationId: string;
   company: string;
   role: string;
+  market?: Market;
   lang?: string;
   recipient?: string;
   resumeHtml?: string;
@@ -108,24 +120,25 @@ export const api = {
 
   profile: () => request<Profile | null>("/profile"),
 
-  master: () => request<MasterProfile | null>("/master"),
+  master: () => request<MasterProfiles>("/master"),
 
-  putMaster: (file: File) =>
+  putMaster: (market: Market, file: File) =>
     file.text().then((content) =>
       request<MasterProfile>("/master", {
         method: "PUT",
-        body: JSON.stringify({ fileName: file.name, content }),
+        body: JSON.stringify({ market, fileName: file.name, content }),
       })
     ),
 
-  deleteMaster: () => request<void>("/master", { method: "DELETE" }),
+  deleteMaster: (market: Market) =>
+    request<void>(`/master/${market}`, { method: "DELETE" }),
 
   docs: () => request<GeneratedDocs[]>("/docs"),
 
-  generateDocs: (applicationId: string, lang?: string) =>
+  generateDocs: (applicationId: string, market: Market, lang?: string) =>
     request<GeneratedDocs>("/docs", {
       method: "POST",
-      body: JSON.stringify({ applicationId, lang }),
+      body: JSON.stringify({ applicationId, market, lang }),
     }),
 
   deleteDocs: (applicationId: string) =>

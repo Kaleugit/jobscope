@@ -3,11 +3,12 @@ import { GetCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import {
   ddb,
-  MASTER_SK,
+  masterSk,
   PROFILE_SK,
   TABLE_NAME,
   USER_PK,
   type Application,
+  type Market,
   type MasterProfile,
 } from "../lib/db";
 import {
@@ -45,6 +46,7 @@ interface ResumeMessage {
 interface DocsMessage {
   kind: "docs";
   applicationId: string;
+  market: Market;
   lang?: string;
 }
 
@@ -205,7 +207,10 @@ async function buildDocuments(message: DocsMessage) {
       })
     ),
     ddb.send(
-      new GetCommand({ TableName: TABLE_NAME, Key: { pk: USER_PK, sk: MASTER_SK } })
+      new GetCommand({
+        TableName: TABLE_NAME,
+        Key: { pk: USER_PK, sk: masterSk(message.market) },
+      })
     ),
   ]);
 
@@ -217,6 +222,7 @@ async function buildDocuments(message: DocsMessage) {
 
   const prompt = buildGenerationPrompt({
     masterProfile: master.content,
+    market: message.market,
     jobUrl: app.url,
     company: app.company,
     role: app.role,
@@ -285,6 +291,7 @@ async function buildDocuments(message: DocsMessage) {
   await saveDocsResult(
     message.applicationId,
     {
+      market: message.market,
       lang: docs.lang,
       recipient: docs.recipient,
       resumeHtml: compose({

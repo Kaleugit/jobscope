@@ -1,16 +1,25 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
-import type { Application, GeneratedDocs, MasterProfile } from "../api";
+import {
+  MARKET_LABELS,
+  MARKETS,
+  type Application,
+  type GeneratedDocs,
+  type Market,
+  type MasterProfiles,
+} from "../api";
 import { Dots } from "../common";
 
 interface CvMakerProps {
   apps: Application[] | null;
-  master: MasterProfile | null;
+  masters: MasterProfiles | null;
+  market: Market;
   docs: GeneratedDocs[];
   generating: string | null;
   uploadingMaster: boolean;
+  onMarketChange: (market: Market) => void;
   onUploadMaster: (event: ChangeEvent<HTMLInputElement>) => void;
   onDeleteMaster: () => void;
-  onGenerate: (applicationId: string, lang?: string) => void;
+  onGenerate: (applicationId: string) => void;
   onDeleteDocs: (applicationId: string) => void;
 }
 
@@ -140,7 +149,10 @@ function DocsResult({
             {" //"}
             {entry.company}
           </span>
-          {entry.lang && <span className="match-detail"> {entry.lang}</span>}
+          {entry.market && (
+            <span className="match-detail"> {MARKET_LABELS[entry.market]}</span>
+          )}
+          {entry.lang && <span className="match-detail"> · {entry.lang}</span>}
         </span>
         <div className="app-actions">
           {entry.coverLetterText && (
@@ -250,16 +262,19 @@ function DocsResult({
 
 export function CvMaker({
   apps,
-  master,
+  masters,
+  market,
   docs,
   generating,
   uploadingMaster,
+  onMarketChange,
   onUploadMaster,
   onDeleteMaster,
   onGenerate,
   onDeleteDocs,
 }: CvMakerProps) {
   const masterInputRef = useRef<HTMLInputElement>(null);
+  const master = masters?.[market] ?? null;
   const analyzed = (apps ?? []).filter(
     (a) => a.analysisStatus === "done" && (a.skills?.length ?? 0) > 0
   );
@@ -279,7 +294,32 @@ export function CvMaker({
       </section>
 
       <section className="block">
-        <h2 className="block-label">{"//master profile"}</h2>
+        <h2 className="block-label">{"//market"}</h2>
+        <div className="toggle" role="group" aria-label="Target market">
+          {MARKETS.map((m) => (
+            <button
+              key={m}
+              type="button"
+              className={`toggle-option${m === market ? " active" : ""}`}
+              aria-pressed={m === market}
+              onClick={() => onMarketChange(m)}
+            >
+              {MARKET_LABELS[m]}
+            </button>
+          ))}
+        </div>
+        <p className="block-note toggle-note">
+          {market === "fin"
+            ? "finnish rules: work authorization, finnish level and location stated plainly in the closing paragraph, gaps named instead of hidden."
+            : "latam and remote rules: contractor terms, invoicing and timezone overlap in the closing paragraph, no visa section."}
+        </p>
+      </section>
+
+      <section className="block">
+        <h2 className="block-label">
+          {"//master profile"}
+          <span className="block-count"> ({MARKET_LABELS[market]})</span>
+        </h2>
         <input
           ref={masterInputRef}
           type="file"
@@ -291,9 +331,9 @@ export function CvMaker({
         {!master && (
           <div className="upload-empty">
             <p className="block-note upload-note">
-              the single source of truth: every experience, project, anchor
-              story and limit, in markdown. a resume is a selection from it,
-              never an addition to it.
+              the single source of truth for this market: every experience,
+              project, anchor story and limit, in markdown. a resume is a
+              selection from it, never an addition to it.
             </p>
             <button
               type="button"

@@ -702,6 +702,43 @@ textarea {
 
 /* ── cv-maker ───────────────────────────────────────────────────────── */
 
+.toggle {
+  display: inline-flex;
+  border: 1px solid var(--line);
+}
+
+.toggle-option {
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--line);
+  border-radius: 0;
+  color: var(--muted);
+  font: inherit;
+  padding: 9px 22px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.toggle-option:last-child {
+  border-right: none;
+}
+.toggle-option:hover {
+  color: var(--text);
+}
+.toggle-option.active {
+  background: var(--text);
+  color: var(--bg);
+}
+.toggle-option:focus-visible {
+  outline: 1px solid var(--text);
+  outline-offset: 2px;
+}
+
+.toggle-note {
+  margin: 14px 0 0;
+  max-width: 62ch;
+}
+
 .cv-pick {
   align-items: center;
 }
