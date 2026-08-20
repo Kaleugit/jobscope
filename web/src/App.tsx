@@ -101,6 +101,7 @@ export default function App() {
     try {
       const created = await api.create({
         url: String(data.get("url") ?? "").trim(),
+        status: data.get("status") as ApplicationStatus,
       });
       setTrackedId(created.id);
       form.reset();
@@ -193,6 +194,16 @@ export default function App() {
                   autoComplete="off"
                   placeholder="https://..."
                 />
+              </div>
+              <div className="field status-field">
+                <label htmlFor="status">status</label>
+                <select id="status" name="status" defaultValue="applied">
+                  {STATUSES.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
               </div>
               <button type="submit" className="boxed-btn" disabled={saving}>
                 {saving ? "saving..." : "add application"}

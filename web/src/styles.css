@@ -143,7 +143,7 @@ a:hover {
 
 .url-row {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr 13ch auto;
   gap: 18px;
   align-items: end;
 }
@@ -445,6 +445,9 @@ textarea {
   }
   .url-row .boxed-btn {
     align-self: stretch;
+  }
+  .status-field {
+    max-width: 100%;
   }
 
   .skills li {

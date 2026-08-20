@@ -41,7 +41,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   list: () => request<Application[]>("/applications"),
-  create: (data: { url: string }) =>
+  create: (data: { url: string; status?: ApplicationStatus }) =>
     request<Application>("/applications", {
       method: "POST",
       body: JSON.stringify(data),
