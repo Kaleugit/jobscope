@@ -1,21 +1,32 @@
 # Jobscope
 
-Job application tracker with AI-powered skill-gap analytics, built entirely on AWS serverless — designed to stay within the AWS Free Plan (zero cost).
+**[Live app](https://d1kvuqf3mt7qda.cloudfront.net)** · Job application tracker with AI-powered skill-gap analytics, built entirely on AWS serverless.
 
-Track your job applications, paste each job description, and an async AI pipeline extracts the required skills. The dashboard then shows which skills appear most across the roles you're targeting — so you know exactly what to learn next.
+Paste the link of a job posting. An async pipeline reads the page, fills in company and role, and extracts the required skills. Upload your resume and the dashboard shows exactly which of those skills you are missing, ranked by how often the market asks for them.
+
+## What it does
+
+| | |
+|---|---|
+| **URL-only intake** | You paste a link. The model fetches the posting itself, so there is no scraper to maintain and no form to fill in. |
+| **Resume understanding** | Your resume is read by the same pipeline and turned into a structured profile: name, title, location, skills. |
+| **Skill gap** | Requested skills are matched against your profile: what you have, what you are missing, a match score per application, and skills you have that nobody asks for. |
+| **Everything async** | Both the posting and the resume are processed off the request path through SQS, so the UI answers immediately and fills in as results land. |
 
 ## Architecture
 
 ```mermaid
 graph LR
     U[Browser] --> CF[CloudFront]
-    CF --> S3[S3 static site]
+    CF --> S3W[S3 static site]
+    U -- presigned PUT --> S3R[(S3 resumes)]
     U --> APIGW[API Gateway HTTP API]
     APIGW --> L1[Lambda: API]
     L1 --> DDB[(DynamoDB)]
     L1 --> Q[SQS queue]
     Q --> L2[Lambda: analyzer]
-    L2 --> LLM[LLM API]
+    L2 --> LLM[LLM]
+    L2 --> S3R
     L2 --> DDB
     Q -.retries exhausted.-> DLQ[SQS DLQ]
 ```
@@ -24,48 +35,58 @@ graph LR
 |---|---|---|
 | Frontend hosting | S3 + CloudFront (OAC) | Private bucket, HTTPS CDN, free tier |
 | API | API Gateway HTTP API + Lambda (Node 22) | Pay-per-request, zero idle cost |
-| Database | DynamoDB (on-demand, single-table) | Free tier 25GB, no servers |
-| AI pipeline | SQS + Lambda + DLQ | Async, retryable, decoupled from the request path |
-| Skill extraction | Gemini API (free tier) | Provider-agnostic module — swappable for Amazon Bedrock |
-| Infrastructure | AWS CDK (TypeScript) | Entire stack versioned as code, one-command deploy |
+| Database | DynamoDB (on-demand, single-table) | Applications and profile share one table |
+| Resume storage | Private S3 bucket, presigned PUT | The file never passes through API Gateway |
+| Async work | SQS + Lambda + DLQ, partial batch failures | Retries without blocking the request path |
+| Extraction | Gemini (`url_context` for pages, native PDF input for resumes) | Provider-agnostic module, swappable for Amazon Bedrock |
+| Infrastructure | AWS CDK (TypeScript) | The entire stack is versioned code, one command to deploy |
+| CI/CD | GitHub Actions + OIDC | Deploys assume an IAM role, no access keys stored |
+
+## Pages
+
+- **`#/home`** — profile, most requested skills, and the skill gap dashboard
+- **`#/applications`** — add a posting by URL, track status (wishlist, applied, interview, offer, rejected)
+- **`#/cv-maker`** — planned: tailor the resume to a specific posting
 
 ## Project layout
 
 ```
 infra/   AWS CDK app (the whole infrastructure as TypeScript)
-api/     Lambda handlers (CRUD + async analyzer)
-web/     React SPA (Vite)
-docs/    Setup guides
+api/     Lambda handlers: CRUD, analytics, async analyzer
+web/     React SPA (Vite), hash-routed, no router dependency
+docs/    AWS account setup guide
 ```
 
-## Getting started
+## Running it yourself
 
-Prerequisites: Node 20+, an AWS account (see [docs/SETUP-AWS.md](docs/SETUP-AWS.md)) and a free Gemini API key ([aistudio.google.com](https://aistudio.google.com/apikey)).
+Prerequisites: Node 20+, an AWS account ([setup guide](docs/SETUP-AWS.md)), and a free Gemini API key ([aistudio.google.com](https://aistudio.google.com/apikey)).
 
 ```bash
 npm install
 
-# local frontend dev (point VITE_API_URL at a deployed API)
-npm run dev:web
-
-# deploy everything (builds web, then cdk deploy)
 export GEMINI_API_KEY=your-key
-npm run build -w web
-npx cdk bootstrap        # first time only, inside infra/
-npm run deploy
+cd infra && npx cdk bootstrap   # first time only
+cd .. && npm run deploy
 ```
 
-The deploy outputs `ApiUrl` and `WebUrl`. Rebuild the frontend with `VITE_API_URL=<ApiUrl>` and redeploy to wire them together.
+The deploy outputs `ApiUrl` and `WebUrl`. Put the API URL in `web/.env.production`, then deploy again so the frontend points at it.
 
 ## Cost
 
-Everything runs inside the AWS Free Plan / always-free tier: Lambda (1M req/month), DynamoDB (25GB), SQS (1M msg/month), CloudFront (1TB/month). The LLM runs on Gemini's free tier. Total: **$0/month**.
+Everything runs inside the AWS Free Plan and the always-free tier: Lambda (1M requests/month), DynamoDB (25GB), SQS (1M messages/month), CloudFront (1TB/month), S3. The model runs on Gemini's free tier. Total: **$0/month**.
+
+## Notes
+
+Two problems worth writing down, since both are the kind that only show up in production:
+
+- **GitHub's OIDC subject claim embeds numeric IDs.** A trust policy scoped to `repo:owner/name:*` never matches; CloudTrail showed the real claim as `repo:owner@54084311/name@1340924790:ref:...`. Scoping to the ID form fixed it.
+- **DynamoDB `UpdateItem` creates the item when the key is absent.** An SQS retry landing after a delete resurrected a row with no `createdAt`, which broke the frontend sort. Every update is now guarded with `attribute_exists(pk)`.
 
 ## Roadmap
 
-- [x] Phase 1 — Scaffold: CDK stack, CRUD API, async AI pipeline, React SPA
-- [ ] Phase 2 — First deploy + wire frontend to API
-- [ ] Phase 3 — CI/CD with GitHub Actions (OIDC, no stored keys)
-- [ ] Phase 4 — Analytics dashboard v2 (skill gap vs. my profile, trends)
-- [ ] Phase 5 — Auth with Cognito, multi-user
-- [ ] Phase 6 — Optional: swap Gemini for Amazon Bedrock
+- [x] CDK stack, CRUD API, async pipeline, React SPA
+- [x] CI/CD with GitHub Actions and OIDC
+- [x] URL-only intake
+- [x] Resume upload and skill-gap dashboard
+- [ ] CV-maker: tailor the resume per posting
+- [ ] Cognito auth and multi-user support
