@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 import {
   api,
   type Application,
@@ -57,6 +63,7 @@ export default function App() {
 
   // The application submitted last, surfaced as a status line by the form.
   const tracked = apps?.find((a) => a.id === trackedId) ?? null;
+  const appsSectionRef = useRef<HTMLElement>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -98,6 +105,12 @@ export default function App() {
       setTrackedId(created.id);
       form.reset();
       await refresh();
+      appsSectionRef.current?.scrollIntoView({
+        behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth",
+        block: "start",
+      });
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -243,7 +256,7 @@ export default function App() {
           </section>
         )}
 
-        <section className="block">
+        <section className="block" ref={appsSectionRef}>
           <h2 className="block-label">
             {"//applications"}
             {apps && apps.length > 0 && (
