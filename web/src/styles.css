@@ -88,6 +88,21 @@ a:hover {
 
 .hero {
   padding: 56px 32px 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  text-align: center;
+}
+
+.hero-mark {
+  width: 112px;
+  height: 112px;
+  flex-shrink: 0;
+}
+
+.hero-text {
+  text-align: left;
 }
 
 .hero h1 {
@@ -428,7 +443,16 @@ textarea {
   }
 
   .hero {
+    flex-direction: column;
+    gap: 16px;
     padding: 40px 20px 32px;
+  }
+  .hero-mark {
+    width: 80px;
+    height: 80px;
+  }
+  .hero-text {
+    text-align: center;
   }
 
   .block {
