@@ -122,6 +122,56 @@ li {
   margin-top: 14pt;
 }`;
 
+/**
+ * Reading comfort on screen only. Print keeps the ATS layout untouched: the
+ * paper gets white with black text, the screen gets a warm page with room to
+ * breathe, the way an e-reader shows a document.
+ */
+// The [data-measure] guard keeps these rules off the hidden iframe that
+// measures how much of the printed page the content fills.
+const SCREEN_CSS = `@media screen {
+  html:not([data-measure]) {
+    background: #d9d2c5;
+  }
+  html:not([data-measure]) body {
+    background: #f7f2e7;
+    color: #2a2724;
+    font-size: 12pt;
+    line-height: 1.62;
+    max-width: 46rem;
+    margin: 0 auto;
+    padding: 3.2rem 3rem 3.6rem;
+    min-height: 100vh;
+    box-shadow: 0 0 24px rgb(0 0 0 / 0.12);
+  }
+  html:not([data-measure]) h1 {
+    font-size: 22pt;
+  }
+  html:not([data-measure]) h2 {
+    font-size: 12.5pt;
+    border-bottom-color: #b9b0a0;
+    margin-top: 20pt;
+  }
+  html:not([data-measure]) .contact,
+  html:not([data-measure]) .job-dates,
+  html:not([data-measure]) .project-meta {
+    color: #5b554d;
+  }
+  html:not([data-measure]) li {
+    margin-bottom: 4pt;
+  }
+  html:not([data-measure]) .letter p {
+    line-height: 1.72;
+  }
+}
+
+@media screen and (max-width: 640px) {
+  html:not([data-measure]) body {
+    padding: 2rem 1.4rem;
+    font-size: 11.5pt;
+  }
+}`;
+
 /** Wraps a body fragment in the frozen skeleton. */
 export function compose(input: {
   lang: string;
@@ -135,6 +185,8 @@ export function compose(input: {
 <title>${input.title}</title>
 <style>
 ${TEMPLATE_CSS}
+
+${SCREEN_CSS}
 </style>
 </head>
 <body>

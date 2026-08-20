@@ -50,7 +50,9 @@ function useMeasuredFill(html?: string): number | null {
     const doc = frame.contentDocument;
     if (doc) {
       doc.open();
-      doc.write(html);
+      // data-measure turns off the on-screen reading styles, so what is
+      // measured is the printed geometry.
+      doc.write(html.replace("<html ", "<html data-measure "));
       doc.close();
       // Let fonts settle before measuring.
       const id = setTimeout(() => {
@@ -136,9 +138,15 @@ function CopyButton({ text, label }: { text: string; label: string }) {
 
 function DocsResult({
   entry,
+  market,
+  generating,
+  onRegenerate,
   onDelete,
 }: {
   entry: GeneratedDocs;
+  market: Market;
+  generating: string | null;
+  onRegenerate: () => void;
   onDelete: () => void;
 }) {
   return (
@@ -159,6 +167,21 @@ function DocsResult({
           {entry.coverLetterText && (
             <CopyButton text={entry.coverLetterText} label="[copy letter]" />
           )}
+          <button
+            type="button"
+            className="ghost-btn"
+            onClick={onRegenerate}
+            disabled={generating !== null}
+          >
+            {generating === entry.applicationId ? (
+              <>
+                [regenerating
+                <Dots />]
+              </>
+            ) : (
+              `[regenerate as ${MARKET_LABELS[market]}]`
+            )}
+          </button>
           <button type="button" className="ghost-btn" onClick={onDelete}>
             [delete]
           </button>
@@ -321,6 +344,12 @@ export function CvMaker({
             ? "finnish rules: work authorization, finnish level and location stated plainly in the closing paragraph, gaps named instead of hidden."
             : "latam and remote rules: contractor terms, invoicing and timezone overlap in the closing paragraph, no visa section."}
         </p>
+
+        {market === "fin" && !masters?.fin && (
+          <p className="pipeline-status toggle-warning">
+            {"> no finland master profile: the generic resume is used, so permit and language lines are left out rather than guessed."}
+          </p>
+        )}
       </section>
 
       <section className="block">
@@ -467,6 +496,9 @@ export function CvMaker({
               <DocsResult
                 key={entry.applicationId}
                 entry={entry}
+                market={market}
+                generating={generating}
+                onRegenerate={() => onGenerate(entry.applicationId)}
                 onDelete={() => onDeleteDocs(entry.applicationId)}
               />
             ))}

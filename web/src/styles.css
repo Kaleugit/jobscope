@@ -854,6 +854,11 @@ textarea {
   max-width: 62ch;
 }
 
+.toggle-warning {
+  margin: 10px 0 0;
+  max-width: 72ch;
+}
+
 .cv-pick {
   align-items: center;
 }
