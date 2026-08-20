@@ -34,6 +34,7 @@ import {
   isMaster,
   isValidUsername,
   issueToken,
+  MIN_PASSWORD_LENGTH,
   newWorkspaceId,
   normalizeUsername,
   verifyPassword,
@@ -496,11 +497,13 @@ async function createAccount(body: Record<string, unknown>) {
 
   if (!isValidUsername(username)) {
     return json(400, {
-      error: "username must be 3 to 32 characters: letters, digits, dot, dash or underscore",
+      error: "username must be 5 to 32 characters: letters, digits, dot, dash or underscore",
     });
   }
-  if (password.length < 8) {
-    return json(400, { error: "password must be at least 8 characters" });
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    return json(400, {
+      error: `password must be at least ${MIN_PASSWORD_LENGTH} characters`,
+    });
   }
 
   const account: Account = {

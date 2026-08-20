@@ -67,7 +67,13 @@ export function Dev({ session }: { session: Session }) {
           <div className="form-row">
             <div className="field">
               <label htmlFor="acc-username">username</label>
-              <input id="acc-username" name="username" required autoComplete="off" />
+              <input
+                id="acc-username"
+                name="username"
+                required
+                minLength={5}
+                autoComplete="off"
+              />
             </div>
             <div className="field">
               <label htmlFor="acc-password">password</label>
@@ -76,7 +82,7 @@ export function Dev({ session }: { session: Session }) {
                 name="password"
                 type="text"
                 required
-                minLength={8}
+                minLength={5}
                 autoComplete="off"
               />
             </div>

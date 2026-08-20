@@ -41,7 +41,9 @@ export function normalizeUsername(value: unknown): string {
     .toLowerCase();
 }
 
-const USERNAME_PATTERN = /^[a-z0-9][a-z0-9._-]{2,31}$/;
+const USERNAME_PATTERN = /^[a-z0-9][a-z0-9._-]{4,31}$/;
+
+export const MIN_PASSWORD_LENGTH = 5;
 
 export function isValidUsername(value: string): boolean {
   return USERNAME_PATTERN.test(value);
