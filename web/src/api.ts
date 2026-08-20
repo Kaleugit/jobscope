@@ -41,16 +41,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   list: () => request<Application[]>("/applications"),
-  create: (data: {
-    company: string;
-    role: string;
-    url?: string;
-    status?: ApplicationStatus;
-    jdText?: string;
-  }) => request<Application>("/applications", {
-    method: "POST",
-    body: JSON.stringify(data),
-  }),
+  create: (data: { url: string }) =>
+    request<Application>("/applications", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
   update: (id: string, data: Partial<Application>) =>
     request<Application>(`/applications/${id}`, {
       method: "PATCH",

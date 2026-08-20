@@ -141,10 +141,11 @@ a:hover {
   gap: 18px;
 }
 
-.form-row {
+.url-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr auto;
   gap: 18px;
+  align-items: end;
 }
 
 .field {
@@ -403,8 +404,12 @@ textarea {
     margin: 0 20px;
   }
 
-  .form-row {
+  .url-row {
     grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+  .url-row .boxed-btn {
+    align-self: stretch;
   }
 
   .skills li {

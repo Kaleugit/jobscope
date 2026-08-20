@@ -14,6 +14,14 @@ const STATUSES: ApplicationStatus[] = [
   "rejected",
 ];
 
+function hostOf(url?: string): string {
+  try {
+    return url ? new URL(url).hostname.replace(/^www\./, "") : "";
+  } catch {
+    return "";
+  }
+}
+
 function Clock() {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
@@ -62,19 +70,20 @@ export default function App() {
     void refresh();
   }, [refresh]);
 
+  // While the pipeline is extracting, poll for the result.
+  useEffect(() => {
+    if (!apps?.some((a) => a.analysisStatus === "pending")) return;
+    const id = setTimeout(() => void refresh(), 5000);
+    return () => clearTimeout(id);
+  }, [apps, refresh]);
+
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
     const data = new FormData(form);
     setSaving(true);
     try {
-      await api.create({
-        company: String(data.get("company") ?? ""),
-        role: String(data.get("role") ?? ""),
-        url: String(data.get("url") ?? "") || undefined,
-        status: (data.get("status") as ApplicationStatus) ?? "applied",
-        jdText: String(data.get("jdText") ?? "") || undefined,
-      });
+      await api.create({ url: String(data.get("url") ?? "").trim() });
       form.reset();
       await refresh();
     } catch (e) {
@@ -133,9 +142,9 @@ export default function App() {
         <section className="block">
           <h2 className="block-label">{"//about"}</h2>
           <p className="about-copy">
-            log each application with its job description. an async pipeline
-            extracts the required skills and shows what the market keeps asking
-            for, so you know exactly what to learn next.
+            paste the link of a job posting. an async pipeline reads the page,
+            fills in company and role, and extracts the required skills, so you
+            can see what the market keeps asking for.
           </p>
         </section>
 
@@ -148,44 +157,22 @@ export default function App() {
         <section className="block">
           <h2 className="block-label">{"//new application"}</h2>
           <form onSubmit={onSubmit} className="form">
-            <div className="form-row">
-              <div className="field">
-                <label htmlFor="company">company</label>
-                <input id="company" name="company" required autoComplete="off" />
+            <div className="url-row">
+              <div className="field url-field">
+                <label htmlFor="url">job posting url</label>
+                <input
+                  id="url"
+                  name="url"
+                  type="url"
+                  required
+                  autoComplete="off"
+                  placeholder="https://..."
+                />
               </div>
-              <div className="field">
-                <label htmlFor="role">role</label>
-                <input id="role" name="role" required autoComplete="off" />
-              </div>
+              <button type="submit" className="boxed-btn" disabled={saving}>
+                {saving ? "saving..." : "add application"}
+              </button>
             </div>
-            <div className="form-row">
-              <div className="field">
-                <label htmlFor="url">job posting url (optional)</label>
-                <input id="url" name="url" type="url" autoComplete="off" />
-              </div>
-              <div className="field">
-                <label htmlFor="status">status</label>
-                <select id="status" name="status" defaultValue="applied">
-                  {STATUSES.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="field">
-              <label htmlFor="jdText">job description (optional)</label>
-              <textarea
-                id="jdText"
-                name="jdText"
-                rows={6}
-                placeholder="paste the full job description. required skills are extracted automatically."
-              />
-            </div>
-            <button type="submit" className="boxed-btn" disabled={saving}>
-              {saving ? "saving..." : "add application"}
-            </button>
           </form>
         </section>
 
@@ -235,11 +222,15 @@ export default function App() {
                 <li key={app.id} className="app-row">
                   <div className="app-main">
                     <span className="app-title">
-                      <span className="app-role">{app.role}</span>
-                      <span className="app-company">
-                        {" //"}
-                        {app.company}
+                      <span className="app-role">
+                        {app.role || hostOf(app.url) || "job posting"}
                       </span>
+                      {app.company && (
+                        <span className="app-company">
+                          {" //"}
+                          {app.company}
+                        </span>
+                      )}
                       {app.url && (
                         <a
                           className="app-link"
@@ -252,11 +243,13 @@ export default function App() {
                       )}
                     </span>
                     {app.analysisStatus === "pending" && (
-                      <span className="tags pending">extracting skills...</span>
+                      <span className="tags pending">
+                        reading the posting...
+                      </span>
                     )}
                     {app.analysisStatus === "failed" && (
                       <span className="tags pending">
-                        skill extraction failed
+                        could not read this posting. the page may block robots.
                       </span>
                     )}
                     {app.skills && app.skills.length > 0 && (

@@ -1,29 +1,38 @@
 import type { SQSBatchResponse, SQSEvent } from "aws-lambda";
 import { UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { ddb, TABLE_NAME, USER_PK } from "../lib/db";
-import { extractSkills } from "../lib/llm";
+import { extractJobInfo, type JobInfo } from "../lib/llm";
 
 interface AnalyzeMessage {
   id: string;
-  jdText: string;
+  url?: string;
+  jdText?: string;
 }
 
 async function saveResult(
   id: string,
-  fields: { skills?: string[]; analysisStatus: "done" | "failed" }
+  result: { info?: JobInfo; analysisStatus: "done" | "failed" }
 ) {
+  const sets = ["analysisStatus = :st", "updatedAt = :now"];
+  const values: Record<string, unknown> = {
+    ":st": result.analysisStatus,
+    ":now": new Date().toISOString(),
+  };
+
+  if (result.info) {
+    sets.push("company = :company", "#role = :role", "skills = :skills");
+    values[":company"] = result.info.company;
+    values[":role"] = result.info.role;
+    values[":skills"] = result.info.skills;
+  }
+
   await ddb.send(
     new UpdateCommand({
       TableName: TABLE_NAME,
       Key: { pk: USER_PK, sk: `APP#${id}` },
-      UpdateExpression: fields.skills
-        ? "SET skills = :skills, analysisStatus = :st, updatedAt = :now"
-        : "SET analysisStatus = :st, updatedAt = :now",
-      ExpressionAttributeValues: {
-        ...(fields.skills ? { ":skills": fields.skills } : {}),
-        ":st": fields.analysisStatus,
-        ":now": new Date().toISOString(),
-      },
+      UpdateExpression: `SET ${sets.join(", ")}`,
+      ExpressionAttributeNames: result.info ? { "#role": "role" } : undefined,
+      ExpressionAttributeValues: values,
     })
   );
 }
@@ -41,9 +50,14 @@ export async function handler(event: SQSEvent): Promise<SQSBatchResponse> {
     }
 
     try {
-      const skills = await extractSkills(message.jdText);
-      await saveResult(message.id, { skills, analysisStatus: "done" });
-      console.log(`Analyzed ${message.id}: ${skills.length} skills`);
+      const info = await extractJobInfo({
+        url: message.url,
+        jdText: message.jdText,
+      });
+      await saveResult(message.id, { info, analysisStatus: "done" });
+      console.log(
+        `Analyzed ${message.id}: ${info.company} / ${info.role} / ${info.skills.length} skills`
+      );
     } catch (error) {
       console.error(`Failed to analyze ${message.id}:`, error);
       // Report as batch failure so SQS retries; after maxReceiveCount the

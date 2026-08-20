@@ -38,40 +38,45 @@ async function listApplications(): Promise<Application[]> {
 }
 
 async function createApplication(body: Record<string, unknown>) {
-  const company = String(body.company ?? "").trim();
-  const role = String(body.role ?? "").trim();
-  if (!company || !role) {
-    return json(400, { error: "company and role are required" });
+  const url = String(body.url ?? "").trim();
+  const jdText = typeof body.jdText === "string" ? body.jdText.trim() : "";
+
+  // The posting URL is the only required input; the AI pipeline fills in
+  // company, role and skills. jdText stays supported as an alternative source.
+  if (!/^https?:\/\/.+/.test(url) && !jdText) {
+    return json(400, { error: "a valid job posting url is required" });
   }
 
   const now = new Date().toISOString();
   const id = randomUUID();
-  const jdText = typeof body.jdText === "string" ? body.jdText.trim() : "";
 
   const item: Application = {
     pk: USER_PK,
     sk: `APP#${id}`,
     id,
-    company,
-    role,
-    url: typeof body.url === "string" ? body.url : undefined,
+    company: String(body.company ?? "").trim(),
+    role: String(body.role ?? "").trim(),
+    url: url || undefined,
     status: STATUSES.includes(String(body.status))
       ? (body.status as Application["status"])
-      : "wishlist",
+      : "applied",
     jdText: jdText || undefined,
-    analysisStatus: jdText ? "pending" : undefined,
+    analysisStatus: "pending",
     createdAt: now,
     updatedAt: now,
   };
 
   await ddb.send(new PutCommand({ TableName: TABLE_NAME, Item: item }));
 
-  // Job description present -> queue async AI skill extraction.
-  if (jdText && ANALYZE_QUEUE_URL) {
+  if (ANALYZE_QUEUE_URL) {
     await sqs.send(
       new SendMessageCommand({
         QueueUrl: ANALYZE_QUEUE_URL,
-        MessageBody: JSON.stringify({ id, jdText }),
+        MessageBody: JSON.stringify({
+          id,
+          url: url || undefined,
+          jdText: jdText || undefined,
+        }),
       })
     );
   }
