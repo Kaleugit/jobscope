@@ -26,15 +26,25 @@ async function saveResult(
     values[":skills"] = result.info.skills;
   }
 
-  await ddb.send(
-    new UpdateCommand({
-      TableName: TABLE_NAME,
-      Key: { pk: USER_PK, sk: `APP#${id}` },
-      UpdateExpression: `SET ${sets.join(", ")}`,
-      ExpressionAttributeNames: result.info ? { "#role": "role" } : undefined,
-      ExpressionAttributeValues: values,
-    })
-  );
+  try {
+    await ddb.send(
+      new UpdateCommand({
+        TableName: TABLE_NAME,
+        Key: { pk: USER_PK, sk: `APP#${id}` },
+        UpdateExpression: `SET ${sets.join(", ")}`,
+        // Without this, updating a deleted item would resurrect a ghost row.
+        ConditionExpression: "attribute_exists(pk)",
+        ExpressionAttributeNames: result.info ? { "#role": "role" } : undefined,
+        ExpressionAttributeValues: values,
+      })
+    );
+  } catch (error) {
+    if ((error as Error).name === "ConditionalCheckFailedException") {
+      console.log(`Item ${id} no longer exists; discarding analysis result`);
+      return;
+    }
+    throw error;
+  }
 }
 
 export async function handler(event: SQSEvent): Promise<SQSBatchResponse> {

@@ -57,7 +57,11 @@ export default function App() {
   const refresh = useCallback(async () => {
     try {
       const [list, sum] = await Promise.all([api.list(), api.skillsSummary()]);
-      setApps(list.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+      setApps(
+        list.sort((a, b) =>
+          (b.createdAt ?? "").localeCompare(a.createdAt ?? "")
+        )
+      );
       setSummary(sum);
       setError("");
     } catch (e) {
