@@ -31,6 +31,7 @@ import {
   accountPk,
   bearerFrom,
   hashPassword,
+  isMaster,
   isValidUsername,
   issueToken,
   newWorkspaceId,
@@ -484,6 +485,7 @@ async function login(body: Record<string, unknown>) {
     token: issueToken(account),
     username: account.username,
     role: account.role,
+    isMaster: isMaster(account.username),
   });
 }
 
@@ -573,9 +575,9 @@ export async function handler(
     }
     const pk = userPk(session.workspace);
 
-    if (event.routeKey.endsWith("/auth/accounts") || event.routeKey.includes("/auth/accounts/")) {
-      if (session.role !== "dev") {
-        return json(403, { error: "developer access only" });
+    if (event.routeKey.includes("/auth/accounts")) {
+      if (!isMaster(session.username)) {
+        return json(403, { error: "master account only" });
       }
     }
 
@@ -584,6 +586,7 @@ export async function handler(
         return json(200, {
           username: session.username,
           role: session.role,
+          isMaster: isMaster(session.username),
         });
       case "GET /auth/accounts":
         return await listAccounts();

@@ -94,6 +94,7 @@ export interface Session {
   token: string;
   username: string;
   role: "dev" | "user";
+  isMaster?: boolean;
 }
 
 const TOKEN_KEY = "jobscope.session";

@@ -14,6 +14,12 @@ import {
 const TOKEN_SECRET = process.env.TOKEN_SECRET ?? "";
 const SESSION_DAYS = 30;
 
+/** Account management is reserved to one account, not to a role, so granting
+ *  someone a dev login never hands over the account list. */
+export const MASTER_USERNAME = (process.env.MASTER_USERNAME ?? "kaleu").toLowerCase();
+
+export const isMaster = (username: string) => username === MASTER_USERNAME;
+
 export interface Account {
   pk: string;
   sk: string;
