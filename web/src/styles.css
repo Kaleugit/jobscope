@@ -452,6 +452,11 @@ textarea {
   color: var(--muted);
 }
 
+.profile-identity {
+  color: var(--text);
+  font-weight: 700;
+}
+
 .skills-drawer summary {
   cursor: pointer;
   list-style: none;

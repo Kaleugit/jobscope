@@ -110,9 +110,10 @@ export function Home({
           <div className="profile-card">
             {profile.analysisStatus === "done" && (
               <p className="profile-meta">
-                {[profile.name, profile.title, profile.location]
-                  .filter(Boolean)
-                  .join(" //")}
+                <span className="profile-identity">
+                  {[profile.name, profile.title].filter(Boolean).join(" //")}
+                </span>
+                {profile.location && ` //${profile.location}`}
               </p>
             )}
 
