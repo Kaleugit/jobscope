@@ -36,6 +36,42 @@ export interface Profile {
   updatedAt: string;
 }
 
+export const MASTER_SK = "MASTER";
+
+/** The single source of truth for generated documents. Nothing outside it may
+ *  appear in a resume or a cover letter. */
+export interface MasterProfile {
+  pk: string;
+  sk: string;
+  fileName: string;
+  content: string;
+  uploadedAt: string;
+}
+
+export interface GeneratedDocsItem {
+  pk: string;
+  sk: string;
+  applicationId: string;
+  company: string;
+  role: string;
+  lang?: string;
+  recipient?: string;
+  resumeHtml?: string;
+  coverLetterHtml?: string;
+  coverLetterText?: string;
+  angle?: string;
+  cut?: string[];
+  keywordsCovered?: string[];
+  gapsHeLacks?: string[];
+  gapsNoRoom?: string[];
+  warnings?: string[];
+  estimatedFill?: number;
+  status: "pending" | "done" | "failed";
+  error?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Application {
   pk: string;
   sk: string;

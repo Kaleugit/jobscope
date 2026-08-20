@@ -10,6 +10,8 @@ import {
   api,
   type Application,
   type ApplicationStatus,
+  type GeneratedDocs,
+  type MasterProfile,
   type Profile,
   type SkillsSummary,
 } from "./api";
@@ -29,6 +31,10 @@ export default function App() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [trackedId, setTrackedId] = useState<string | null>(null);
+  const [master, setMaster] = useState<MasterProfile | null>(null);
+  const [docs, setDocs] = useState<GeneratedDocs[]>([]);
+  const [uploadingMaster, setUploadingMaster] = useState(false);
+  const [generating, setGenerating] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const appsSectionRef = useRef<HTMLElement>(null);
@@ -38,12 +44,20 @@ export default function App() {
 
   const refresh = useCallback(async () => {
     try {
-      const [list, sum, prof] = await Promise.all([
+      const [list, sum, prof, masterDoc, docList] = await Promise.all([
         api.list(),
         api.skillsSummary(),
         api.profile(),
+        api.master(),
+        api.docs(),
       ]);
       setProfile(prof);
+      setMaster(masterDoc);
+      setDocs(
+        docList.sort((a, b) =>
+          (b.createdAt ?? "").localeCompare(a.createdAt ?? "")
+        )
+      );
       setApps(
         list.sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""))
       );
@@ -63,11 +77,52 @@ export default function App() {
   useEffect(() => {
     const analyzing =
       apps?.some((a) => a.analysisStatus === "pending") ||
-      profile?.analysisStatus === "pending";
+      profile?.analysisStatus === "pending" ||
+      docs.some((d) => d.status === "pending");
     if (!analyzing) return;
     const id = setTimeout(() => void refresh(), 3000);
     return () => clearTimeout(id);
-  }, [apps, profile, refresh]);
+  }, [apps, profile, docs, refresh]);
+
+  async function onUploadMaster(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    setUploadingMaster(true);
+    setError("");
+    try {
+      setMaster(await api.putMaster(file));
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setUploadingMaster(false);
+    }
+  }
+
+  async function onDeleteMaster() {
+    if (!confirm("Delete the master profile?")) return;
+    await api.deleteMaster();
+    setMaster(null);
+  }
+
+  async function onGenerateDocs(applicationId: string, lang?: string) {
+    setGenerating(applicationId);
+    setError("");
+    try {
+      await api.generateDocs(applicationId, lang);
+      await refresh();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setGenerating(null);
+    }
+  }
+
+  async function onDeleteDocs(applicationId: string) {
+    await api.deleteDocs(applicationId);
+    await refresh();
+  }
 
   async function onResumeChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -167,7 +222,19 @@ export default function App() {
           />
         )}
 
-        {route === "cv-maker" && <CvMaker profile={profile} summary={summary} />}
+        {route === "cv-maker" && (
+          <CvMaker
+            apps={apps}
+            master={master}
+            docs={docs}
+            generating={generating}
+            uploadingMaster={uploadingMaster}
+            onUploadMaster={onUploadMaster}
+            onDeleteMaster={onDeleteMaster}
+            onGenerate={onGenerateDocs}
+            onDeleteDocs={onDeleteDocs}
+          />
+        )}
       </main>
 
       <footer className="site-footer">developed by Kaleu-dev ® 2026</footer>

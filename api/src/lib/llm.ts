@@ -133,6 +133,91 @@ export async function extractResumeProfile(
   };
 }
 
+export interface GeneratedDocs {
+  lang: string;
+  recipient?: string;
+  resumeBodyHtml: string;
+  coverLetterBodyHtml: string;
+  coverLetterText: string;
+  angle?: string;
+  cut?: string[];
+  keywordsCovered?: string[];
+  gapsHeLacks?: string[];
+  gapsNoRoom?: string[];
+}
+
+/**
+ * One generation attempt. `feedback` carries the reason a previous attempt was
+ * rejected (an em dash in prose, or content that overflowed the page), so the
+ * model corrects instead of rolling the dice again.
+ */
+export async function generateDocs(
+  prompt: string,
+  feedback?: string
+): Promise<GeneratedDocs> {
+  if (!GEMINI_API_KEY) {
+    throw new Error("GEMINI_API_KEY is not configured");
+  }
+
+  const body: Record<string, unknown> = {
+    contents: [
+      { parts: [{ text: feedback ? `${prompt}\n\n---\n\n${feedback}` : prompt }] },
+    ],
+    generationConfig: { temperature: 0.5 },
+    tools: [{ url_context: {} }],
+  };
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }
+  );
+
+  if (!res.ok) {
+    const errBody = await res.text();
+    throw new Error(`Gemini API error ${res.status}: ${errBody.slice(0, 500)}`);
+  }
+
+  const data = (await res.json()) as {
+    candidates?: { content?: { parts?: { text?: string }[] } }[];
+  };
+  const text =
+    data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ??
+    "";
+
+  const match = text.replace(/```(?:json)?/g, "").trim().match(/\{[\s\S]*\}/);
+  if (!match) throw new Error(`LLM returned no JSON: ${text.slice(0, 200)}`);
+
+  const parsed = JSON.parse(match[0]) as Record<string, unknown>;
+  const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+  const arr = (v: unknown) =>
+    Array.isArray(v)
+      ? v.filter((x): x is string => typeof x === "string" && x.trim() !== "")
+      : [];
+
+  const resumeBodyHtml = str(parsed.resumeBodyHtml);
+  const coverLetterBodyHtml = str(parsed.coverLetterBodyHtml);
+  if (!resumeBodyHtml || !coverLetterBodyHtml) {
+    throw new Error("LLM response missing one of the document fragments");
+  }
+
+  return {
+    lang: str(parsed.lang) || "en",
+    recipient: str(parsed.recipient) || undefined,
+    resumeBodyHtml,
+    coverLetterBodyHtml,
+    coverLetterText: str(parsed.coverLetterText),
+    angle: str(parsed.angle) || undefined,
+    cut: arr(parsed.cut),
+    keywordsCovered: arr(parsed.keywordsCovered),
+    gapsHeLacks: arr(parsed.gapsHeLacks),
+    gapsNoRoom: arr(parsed.gapsNoRoom),
+  };
+}
+
 export async function extractJobInfo(input: {
   url?: string;
   jdText?: string;

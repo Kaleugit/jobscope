@@ -700,6 +700,71 @@ textarea {
   }
 }
 
+/* ── cv-maker ───────────────────────────────────────────────────────── */
+
+.cv-pick {
+  align-items: center;
+}
+
+.cv-list {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.cv-result {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.doc-angle {
+  margin: 0;
+}
+
+.doc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.doc-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.doc-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.fill-badge {
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.fill-badge.over {
+  color: var(--danger);
+}
+
+/* The deliverable keeps its own light identity; it is a print document, not
+   part of this interface. */
+.doc-frame {
+  width: 100%;
+  aspect-ratio: 210 / 297;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+.report {
+  margin-top: 14px;
+}
+
 /* ── footer ─────────────────────────────────────────────────────────── */
 
 .site-footer {
@@ -752,6 +817,10 @@ textarea {
 
   .site-footer {
     padding: 20px;
+  }
+
+  .doc-grid {
+    grid-template-columns: 1fr;
   }
 
   .block {

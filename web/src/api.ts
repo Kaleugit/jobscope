@@ -51,6 +51,33 @@ export interface SkillsSummary {
   averageMatch: number;
 }
 
+export interface MasterProfile {
+  fileName: string;
+  uploadedAt: string;
+  size: number;
+}
+
+export interface GeneratedDocs {
+  applicationId: string;
+  company: string;
+  role: string;
+  lang?: string;
+  recipient?: string;
+  resumeHtml?: string;
+  coverLetterHtml?: string;
+  coverLetterText?: string;
+  angle?: string;
+  cut?: string[];
+  keywordsCovered?: string[];
+  gapsHeLacks?: string[];
+  gapsNoRoom?: string[];
+  warnings?: string[];
+  estimatedFill?: number;
+  status: "pending" | "done" | "failed";
+  error?: string;
+  createdAt: string;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
     headers: { "Content-Type": "application/json" },
@@ -80,6 +107,29 @@ export const api = {
   skillsSummary: () => request<SkillsSummary>("/skills/summary"),
 
   profile: () => request<Profile | null>("/profile"),
+
+  master: () => request<MasterProfile | null>("/master"),
+
+  putMaster: (file: File) =>
+    file.text().then((content) =>
+      request<MasterProfile>("/master", {
+        method: "PUT",
+        body: JSON.stringify({ fileName: file.name, content }),
+      })
+    ),
+
+  deleteMaster: () => request<void>("/master", { method: "DELETE" }),
+
+  docs: () => request<GeneratedDocs[]>("/docs"),
+
+  generateDocs: (applicationId: string, lang?: string) =>
+    request<GeneratedDocs>("/docs", {
+      method: "POST",
+      body: JSON.stringify({ applicationId, lang }),
+    }),
+
+  deleteDocs: (applicationId: string) =>
+    request<void>(`/docs/${applicationId}`, { method: "DELETE" }),
 
   deleteProfile: () => request<void>("/profile", { method: "DELETE" }),
 

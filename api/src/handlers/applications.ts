@@ -15,10 +15,12 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { randomUUID } from "node:crypto";
 import {
   ddb,
+  MASTER_SK,
   PROFILE_SK,
   TABLE_NAME,
   USER_PK,
   type Application,
+  type MasterProfile,
   type Profile,
 } from "../lib/db";
 
@@ -271,6 +273,103 @@ async function startResumeAnalysis(body: Record<string, unknown>) {
   return json(202, profile);
 }
 
+async function getMasterProfile(): Promise<MasterProfile | undefined> {
+  const result = await ddb.send(
+    new GetCommand({
+      TableName: TABLE_NAME,
+      Key: { pk: USER_PK, sk: MASTER_SK },
+    })
+  );
+  return result.Item as MasterProfile | undefined;
+}
+
+// The master profile is markdown, small enough to live in the item itself.
+async function putMasterProfile(body: Record<string, unknown>) {
+  const fileName = String(body.fileName ?? "").trim();
+  const content = typeof body.content === "string" ? body.content : "";
+
+  if (!fileName || content.trim().length < 200) {
+    return json(400, { error: "fileName and a non-trivial content are required" });
+  }
+  if (content.length > 200_000) {
+    return json(413, { error: "master profile is too large" });
+  }
+
+  const item: MasterProfile = {
+    pk: USER_PK,
+    sk: MASTER_SK,
+    fileName,
+    content,
+    uploadedAt: new Date().toISOString(),
+  };
+  await ddb.send(new PutCommand({ TableName: TABLE_NAME, Item: item }));
+
+  return json(200, { fileName, uploadedAt: item.uploadedAt, size: content.length });
+}
+
+async function generateDocuments(body: Record<string, unknown>) {
+  const applicationId = String(body.applicationId ?? "").trim();
+  if (!applicationId) return json(400, { error: "applicationId is required" });
+
+  const [appResult, master] = await Promise.all([
+    ddb.send(
+      new GetCommand({
+        TableName: TABLE_NAME,
+        Key: { pk: USER_PK, sk: `APP#${applicationId}` },
+      })
+    ),
+    getMasterProfile(),
+  ]);
+
+  const app = appResult.Item as Application | undefined;
+  if (!app) return json(404, { error: "application not found" });
+  if (!app.skills?.length) {
+    return json(409, { error: "this application has not been analyzed yet" });
+  }
+  if (!master) {
+    return json(409, { error: "upload your master profile first" });
+  }
+
+  const now = new Date().toISOString();
+  const item = {
+    pk: USER_PK,
+    sk: `DOCS#${applicationId}`,
+    applicationId,
+    company: app.company,
+    role: app.role,
+    status: "pending" as const,
+    createdAt: now,
+    updatedAt: now,
+  };
+  await ddb.send(new PutCommand({ TableName: TABLE_NAME, Item: item }));
+
+  if (ANALYZE_QUEUE_URL) {
+    await sqs.send(
+      new SendMessageCommand({
+        QueueUrl: ANALYZE_QUEUE_URL,
+        MessageBody: JSON.stringify({
+          kind: "docs",
+          applicationId,
+          lang: typeof body.lang === "string" ? body.lang : undefined,
+        }),
+      })
+    );
+  }
+
+  return json(202, item);
+}
+
+async function listDocuments() {
+  const result = await ddb.send(
+    new QueryCommand({
+      TableName: TABLE_NAME,
+      KeyConditionExpression: "pk = :pk AND begins_with(sk, :sk)",
+      ExpressionAttributeValues: { ":pk": USER_PK, ":sk": "DOCS#" },
+    })
+  );
+  return json(200, result.Items ?? []);
+}
+
 async function deleteProfile() {
   const profile = await getProfile();
   if (profile?.s3Key) {
@@ -341,6 +440,41 @@ export async function handler(
         return await startResumeAnalysis(body);
       case "DELETE /profile":
         return await deleteProfile();
+      case "GET /master": {
+        const master = await getMasterProfile();
+        return json(
+          200,
+          master
+            ? {
+                fileName: master.fileName,
+                uploadedAt: master.uploadedAt,
+                size: master.content.length,
+              }
+            : null
+        );
+      }
+      case "PUT /master":
+        return await putMasterProfile(body);
+      case "DELETE /master":
+        await ddb.send(
+          new DeleteCommand({
+            TableName: TABLE_NAME,
+            Key: { pk: USER_PK, sk: MASTER_SK },
+          })
+        );
+        return json(204, {});
+      case "GET /docs":
+        return await listDocuments();
+      case "POST /docs":
+        return await generateDocuments(body);
+      case "DELETE /docs/{id}":
+        await ddb.send(
+          new DeleteCommand({
+            TableName: TABLE_NAME,
+            Key: { pk: USER_PK, sk: `DOCS#${id}` },
+          })
+        );
+        return json(204, {});
       default:
         return json(404, { error: `unknown route: ${event.routeKey}` });
     }

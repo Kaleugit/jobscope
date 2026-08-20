@@ -70,16 +70,18 @@ export class JobscopeStack extends Stack {
       retentionPeriod: Duration.days(14),
     });
 
+    // Document generation runs a generate, check, correct loop, so the queue
+    // has to wait much longer than a single extraction call.
     const analyzeQueue = new Queue(this, "AnalyzeQueue", {
-      visibilityTimeout: Duration.seconds(90),
+      visibilityTimeout: Duration.seconds(360),
       deadLetterQueue: { queue: analyzeDlq, maxReceiveCount: 3 },
     });
 
     const analyzeFn = new NodejsFunction(this, "AnalyzeFn", {
       entry: join(__dirname, "../../api/src/handlers/analyze.ts"),
       runtime: Runtime.NODEJS_22_X,
-      timeout: Duration.seconds(60),
-      memorySize: 256,
+      timeout: Duration.seconds(300),
+      memorySize: 512,
       environment: {
         TABLE_NAME: table.tableName,
         RESUME_BUCKET: resumeBucket.bucketName,
@@ -91,7 +93,7 @@ export class JobscopeStack extends Stack {
     resumeBucket.grantRead(analyzeFn);
     analyzeFn.addEventSource(
       new SqsEventSource(analyzeQueue, {
-        batchSize: 5,
+        batchSize: 1,
         reportBatchItemFailures: true,
       })
     );
@@ -140,6 +142,12 @@ export class JobscopeStack extends Stack {
       ["/profile", HttpMethod.DELETE],
       ["/profile/upload-url", HttpMethod.POST],
       ["/profile/analyze", HttpMethod.POST],
+      ["/master", HttpMethod.GET],
+      ["/master", HttpMethod.PUT],
+      ["/master", HttpMethod.DELETE],
+      ["/docs", HttpMethod.GET],
+      ["/docs", HttpMethod.POST],
+      ["/docs/{id}", HttpMethod.DELETE],
     ];
     for (const [path, method] of routes) {
       httpApi.addRoutes({ path, methods: [method], integration });
