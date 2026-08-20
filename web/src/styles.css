@@ -205,6 +205,40 @@ textarea {
   color: #6b6b6b;
 }
 
+/* Sequential ellipsis for in-flight actions. Dots keep their space when
+   dimmed so the label never shifts width. */
+.dots span {
+  opacity: 0.2;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .dots span {
+    animation: dot-cycle 1.2s steps(1) infinite;
+  }
+  .dots span:nth-child(2) {
+    animation-delay: 0.3s;
+  }
+  .dots span:nth-child(3) {
+    animation-delay: 0.6s;
+  }
+  @keyframes dot-cycle {
+    0%,
+    75% {
+      opacity: 1;
+    }
+    76%,
+    100% {
+      opacity: 0.2;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dots span {
+    opacity: 1;
+  }
+}
+
 .boxed-btn {
   align-self: flex-start;
   background: transparent;

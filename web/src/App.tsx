@@ -30,6 +30,17 @@ function hostOf(url?: string): string {
   }
 }
 
+// Dots light up in sequence so a running action never looks frozen.
+function Dots() {
+  return (
+    <span className="dots" aria-hidden="true">
+      <span>.</span>
+      <span>.</span>
+      <span>.</span>
+    </span>
+  );
+}
+
 function Clock() {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
@@ -243,7 +254,14 @@ export default function App() {
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
               >
-                {uploading ? "uploading..." : "upload resume"}
+                {uploading ? (
+                  <>
+                    uploading
+                    <Dots />
+                  </>
+                ) : (
+                  "upload resume"
+                )}
               </button>
             </div>
           )}
@@ -259,7 +277,14 @@ export default function App() {
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploading}
                   >
-                    {uploading ? "[uploading...]" : "[replace]"}
+                    {uploading ? (
+                      <>
+                        [uploading
+                        <Dots />]
+                      </>
+                    ) : (
+                      "[replace]"
+                    )}
                   </button>
                   <button
                     type="button"
@@ -336,7 +361,14 @@ export default function App() {
                 </select>
               </div>
               <button type="submit" className="boxed-btn" disabled={saving}>
-                {saving ? "saving..." : "add application"}
+                {saving ? (
+                  <>
+                    saving
+                    <Dots />
+                  </>
+                ) : (
+                  "add application"
+                )}
               </button>
             </div>
 
