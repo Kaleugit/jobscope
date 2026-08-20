@@ -6,16 +6,42 @@ import {
   type SkillsSummary,
 } from "./api";
 
-const STATUS_LABELS: Record<ApplicationStatus, string> = {
-  wishlist: "Interesse",
-  applied: "Aplicada",
-  interview: "Entrevista",
-  offer: "Oferta",
-  rejected: "Recusada",
-};
+const STATUSES: ApplicationStatus[] = [
+  "wishlist",
+  "applied",
+  "interview",
+  "offer",
+  "rejected",
+];
+
+function Clock() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <time dateTime={now.toISOString()}>
+      {now.toLocaleTimeString("en-US", { hour12: true })}
+    </time>
+  );
+}
+
+function SkeletonList() {
+  return (
+    <ul className="apps" aria-hidden="true">
+      {[0, 1, 2].map((i) => (
+        <li key={i} className="app-row">
+          <div className="skeleton" style={{ width: "38%" }} />
+          <div className="skeleton" style={{ width: "12%" }} />
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export default function App() {
-  const [apps, setApps] = useState<Application[]>([]);
+  const [apps, setApps] = useState<Application[] | null>(null);
   const [summary, setSummary] = useState<SkillsSummary | null>(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -28,6 +54,7 @@ export default function App() {
       setError("");
     } catch (e) {
       setError((e as Error).message);
+      setApps((current) => current ?? []);
     }
   }, []);
 
@@ -63,7 +90,7 @@ export default function App() {
   }
 
   async function onDelete(id: string) {
-    if (!confirm("Remover esta candidatura?")) return;
+    if (!confirm("Delete this application?")) return;
     await api.remove(id);
     await refresh();
   }
@@ -71,101 +98,208 @@ export default function App() {
   const maxCount = summary?.skills[0]?.count ?? 1;
 
   return (
-    <main className="container">
-      <header>
-        <h1>Jobscope</h1>
-        <p>Rastreie candidaturas e descubra as skills mais pedidas nas suas vagas.</p>
+    <div className="frame">
+      <header className="meta-grid">
+        <div className="meta-cell">
+          <span className="meta-label">{"//tracker"}</span>
+          <span>jobscope</span>
+        </div>
+        <div className="meta-cell">
+          <span className="meta-label">{"//stack"}</span>
+          <span>aws serverless</span>
+        </div>
+        <div className="meta-cell">
+          <span className="meta-label">{"//github"}</span>
+          <a
+            href="https://github.com/Kaleugit/jobscope"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Kaleugit/jobscope
+          </a>
+        </div>
+        <div className="meta-cell">
+          <span className="meta-label">{"//local time"}</span>
+          <Clock />
+        </div>
       </header>
 
-      {error && <div className="error">{error}</div>}
-
-      <section className="card">
-        <h2>Nova candidatura</h2>
-        <form onSubmit={onSubmit} className="form">
-          <div className="row">
-            <input name="company" placeholder="Empresa" required />
-            <input name="role" placeholder="Cargo" required />
-          </div>
-          <div className="row">
-            <input name="url" placeholder="Link da vaga (opcional)" type="url" />
-            <select name="status" defaultValue="applied">
-              {Object.entries(STATUS_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </select>
-          </div>
-          <textarea
-            name="jdText"
-            rows={5}
-            placeholder="Cole a descrição da vaga aqui — a IA extrai as skills automaticamente"
-          />
-          <button type="submit" disabled={saving}>
-            {saving ? "Salvando…" : "Adicionar"}
-          </button>
-        </form>
-      </section>
-
-      {summary && summary.skills.length > 0 && (
-        <section className="card">
-          <h2>Skills mais pedidas</h2>
-          <p className="muted">
-            {summary.analyzedApplications} de {summary.totalApplications} vagas analisadas pela IA
-          </p>
-          <ul className="skills">
-            {summary.skills.slice(0, 15).map((skill) => (
-              <li key={skill.name}>
-                <span className="skill-name">{skill.name}</span>
-                <span
-                  className="bar"
-                  style={{ width: `${(skill.count / maxCount) * 100}%` }}
-                />
-                <span className="count">{skill.count}</span>
-              </li>
-            ))}
-          </ul>
+      <main>
+        <section className="hero">
+          <h1>{"<Jobscope>"}</h1>
+          <p className="hero-sub">{"//job application tracker"}</p>
         </section>
-      )}
 
-      <section className="card">
-        <h2>Candidaturas ({apps.length})</h2>
-        {apps.length === 0 && <p className="muted">Nenhuma candidatura ainda.</p>}
-        <ul className="apps">
-          {apps.map((app) => (
-            <li key={app.id}>
-              <div className="app-main">
-                <strong>{app.role}</strong>
-                <span className="muted"> · {app.company}</span>
-                {app.url && (
-                  <a href={app.url} target="_blank" rel="noreferrer"> ↗</a>
-                )}
-                <div className="tags">
-                  {app.analysisStatus === "pending" && (
-                    <em className="muted">analisando skills…</em>
-                  )}
-                  {app.skills?.map((s) => (
-                    <span key={s} className="tag">{s}</span>
-                  ))}
-                </div>
+        <section className="block">
+          <h2 className="block-label">{"//about"}</h2>
+          <p className="about-copy">
+            log each application with its job description. an async pipeline
+            extracts the required skills and shows what the market keeps asking
+            for, so you know exactly what to learn next.
+          </p>
+        </section>
+
+        {error && (
+          <div className="error" role="alert">
+            [error] {error}
+          </div>
+        )}
+
+        <section className="block">
+          <h2 className="block-label">{"//new application"}</h2>
+          <form onSubmit={onSubmit} className="form">
+            <div className="form-row">
+              <div className="field">
+                <label htmlFor="company">company</label>
+                <input id="company" name="company" required autoComplete="off" />
               </div>
-              <div className="app-actions">
-                <select
-                  value={app.status}
-                  onChange={(e) =>
-                    onStatusChange(app.id, e.target.value as ApplicationStatus)
-                  }
-                >
-                  {Object.entries(STATUS_LABELS).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
+              <div className="field">
+                <label htmlFor="role">role</label>
+                <input id="role" name="role" required autoComplete="off" />
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="field">
+                <label htmlFor="url">job posting url (optional)</label>
+                <input id="url" name="url" type="url" autoComplete="off" />
+              </div>
+              <div className="field">
+                <label htmlFor="status">status</label>
+                <select id="status" name="status" defaultValue="applied">
+                  {STATUSES.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
                   ))}
                 </select>
-                <button className="danger" onClick={() => onDelete(app.id)}>
-                  ✕
-                </button>
               </div>
-            </li>
-          ))}
-        </ul>
-      </section>
-    </main>
+            </div>
+            <div className="field">
+              <label htmlFor="jdText">job description (optional)</label>
+              <textarea
+                id="jdText"
+                name="jdText"
+                rows={6}
+                placeholder="paste the full job description. required skills are extracted automatically."
+              />
+            </div>
+            <button type="submit" className="boxed-btn" disabled={saving}>
+              {saving ? "saving..." : "add application"}
+            </button>
+          </form>
+        </section>
+
+        {summary && summary.skills.length > 0 && (
+          <section className="block">
+            <h2 className="block-label">{"//requested skills"}</h2>
+            <p className="block-note">
+              {summary.analyzedApplications} of {summary.totalApplications}{" "}
+              applications analyzed
+            </p>
+            <ul className="skills">
+              {summary.skills.slice(0, 15).map((skill) => (
+                <li key={skill.name}>
+                  <span className="skill-name">{skill.name}</span>
+                  <span className="skill-track">
+                    <span
+                      className="skill-bar"
+                      style={{ width: `${(skill.count / maxCount) * 100}%` }}
+                    />
+                  </span>
+                  <span className="skill-count">{skill.count}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        <section className="block">
+          <h2 className="block-label">
+            {"//applications"}
+            {apps && apps.length > 0 && (
+              <span className="block-count"> ({apps.length})</span>
+            )}
+          </h2>
+
+          {apps === null && <SkeletonList />}
+
+          {apps !== null && apps.length === 0 && (
+            <p className="empty">
+              no applications yet. add the first one above.
+            </p>
+          )}
+
+          {apps !== null && apps.length > 0 && (
+            <ul className="apps">
+              {apps.map((app) => (
+                <li key={app.id} className="app-row">
+                  <div className="app-main">
+                    <span className="app-title">
+                      <span className="app-role">{app.role}</span>
+                      <span className="app-company">
+                        {" //"}
+                        {app.company}
+                      </span>
+                      {app.url && (
+                        <a
+                          className="app-link"
+                          href={app.url}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          [link]
+                        </a>
+                      )}
+                    </span>
+                    {app.analysisStatus === "pending" && (
+                      <span className="tags pending">extracting skills...</span>
+                    )}
+                    {app.analysisStatus === "failed" && (
+                      <span className="tags pending">
+                        skill extraction failed
+                      </span>
+                    )}
+                    {app.skills && app.skills.length > 0 && (
+                      <span className="tags">
+                        {app.skills.map((s) => (
+                          <span key={s} className="tag">
+                            [{s}]
+                          </span>
+                        ))}
+                      </span>
+                    )}
+                  </div>
+                  <div className="app-actions">
+                    <select
+                      aria-label={`status of ${app.role} at ${app.company}`}
+                      value={app.status}
+                      onChange={(e) =>
+                        onStatusChange(
+                          app.id,
+                          e.target.value as ApplicationStatus
+                        )
+                      }
+                    >
+                      {STATUSES.map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      className="ghost-btn"
+                      onClick={() => onDelete(app.id)}
+                      aria-label={`delete ${app.role} at ${app.company}`}
+                    >
+                      [x]
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </main>
+    </div>
   );
 }
