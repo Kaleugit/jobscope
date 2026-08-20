@@ -61,7 +61,7 @@ export class JobscopeStack extends Stack {
       environment: {
         TABLE_NAME: table.tableName,
         GEMINI_API_KEY: process.env.GEMINI_API_KEY ?? "",
-        GEMINI_MODEL: process.env.GEMINI_MODEL ?? "gemini-2.5-flash",
+        GEMINI_MODEL: process.env.GEMINI_MODEL ?? "gemini-3.6-flash",
       },
     });
     table.grantReadWriteData(analyzeFn);

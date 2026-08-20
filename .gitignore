@@ -3,5 +3,6 @@ dist/
 cdk.out/
 .env
 .env.*
+outputs.json
 *.local
 .DS_Store

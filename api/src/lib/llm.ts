@@ -3,7 +3,7 @@
 // this module — the rest of the pipeline is provider-agnostic.
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? "";
-const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-3.6-flash";
 
 const PROMPT = `You are a recruiting analyst. Extract the technical and professional skills required by the following job description.
 
