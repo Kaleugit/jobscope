@@ -76,13 +76,16 @@ a:hover {
   text-align: left;
 }
 
-.login-btn {
+/* Scoped to .login so the generic .boxed-btn and .block-note rules further
+   down the file do not win on source order. */
+.login .login-btn {
   align-self: stretch;
   text-align: center;
+  margin-top: 6px;
 }
 
-.login-note {
-  margin: 32px 0 0;
+.login .login-note {
+  margin: 40px 0 0;
   max-width: 42ch;
 }
 
