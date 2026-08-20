@@ -147,6 +147,9 @@ a:hover {
   gap: 18px;
   align-items: end;
 }
+.url-row .boxed-btn {
+  align-self: end;
+}
 
 .field {
   display: flex;
