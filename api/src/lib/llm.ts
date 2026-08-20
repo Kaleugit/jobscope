@@ -153,16 +153,24 @@ export interface GeneratedDocs {
  */
 export async function generateDocs(
   prompt: string,
-  feedback?: string
+  feedback?: string,
+  sourceFile?: { base64: string; mimeType: string }
 ): Promise<GeneratedDocs> {
   if (!GEMINI_API_KEY) {
     throw new Error("GEMINI_API_KEY is not configured");
   }
 
+  const parts: Record<string, unknown>[] = [
+    { text: feedback ? `${prompt}\n\n---\n\n${feedback}` : prompt },
+  ];
+  if (sourceFile) {
+    parts.push({
+      inline_data: { mime_type: sourceFile.mimeType, data: sourceFile.base64 },
+    });
+  }
+
   const body: Record<string, unknown> = {
-    contents: [
-      { parts: [{ text: feedback ? `${prompt}\n\n---\n\n${feedback}` : prompt }] },
-    ],
+    contents: [{ parts }],
     generationConfig: { temperature: 0.5 },
     tools: [{ url_context: {} }],
   };

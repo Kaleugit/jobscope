@@ -11,6 +11,7 @@ import { Dots } from "../common";
 
 interface CvMakerProps {
   apps: Application[] | null;
+  hasResume: boolean;
   masters: MasterProfiles | null;
   market: Market;
   docs: GeneratedDocs[];
@@ -262,6 +263,7 @@ function DocsResult({
 
 export function CvMaker({
   apps,
+  hasResume,
   masters,
   market,
   docs,
@@ -287,10 +289,16 @@ export function CvMaker({
         <h2 className="block-label">{"//cv-maker"}</h2>
         <p className="about-copy">
           pick a job you saved and get a resume and a cover letter written for
-          it. content is selected from your master profile and nothing else, so
+          it. content comes from the resume you uploaded and nothing else, so
           every claim survives the interview. both are checked against the ATS
           rules and have to fit on one page.
         </p>
+
+        {!hasResume && !master && (
+          <p className="pipeline-status build-note status-failed">
+            {"> upload your resume in //dashboard first"}
+          </p>
+        )}
       </section>
 
       <section className="block">
@@ -318,7 +326,10 @@ export function CvMaker({
       <section className="block">
         <h2 className="block-label">
           {"//master profile"}
-          <span className="block-count"> ({MARKET_LABELS[market]})</span>
+          <span className="block-count">
+            {" "}
+            (optional · {MARKET_LABELS[market]})
+          </span>
         </h2>
         <input
           ref={masterInputRef}
@@ -331,9 +342,10 @@ export function CvMaker({
         {!master && (
           <div className="upload-empty">
             <p className="block-note upload-note">
-              the single source of truth for this market: every experience,
-              project, anchor story and limit, in markdown. a resume is a
-              selection from it, never an addition to it.
+              your resume is the source by default. a master profile replaces it
+              with a richer superset for this market: every experience, project,
+              anchor story and limit, in markdown. what is generated is always a
+              selection from the source, never an addition to it.
             </p>
             <button
               type="button"
@@ -390,9 +402,15 @@ export function CvMaker({
         )}
       </section>
 
-      {master && (
+      {(master || hasResume) && (
         <section className="block">
-          <h2 className="block-label">{"//generate for"}</h2>
+          <h2 className="block-label">
+            {"//generate for"}
+            <span className="block-count">
+              {" "}
+              (source: {master ? master.fileName : "your resume"})
+            </span>
+          </h2>
 
           {analyzed.length === 0 && (
             <p className="empty">

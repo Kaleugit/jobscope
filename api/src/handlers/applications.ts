@@ -373,7 +373,7 @@ async function generateDocuments(pk: string, workspace: string, body: Record<str
   if (!applicationId) return json(400, { error: "applicationId is required" });
   if (!market) return json(400, { error: `market must be one of: ${MARKETS.join(", ")}` });
 
-  const [appResult, master] = await Promise.all([
+  const [appResult, master, profile] = await Promise.all([
     ddb.send(
       new GetCommand({
         TableName: TABLE_NAME,
@@ -381,6 +381,7 @@ async function generateDocuments(pk: string, workspace: string, body: Record<str
       })
     ),
     getMasterProfile(pk, market),
+    getProfile(pk),
   ]);
 
   const app = appResult.Item as Application | undefined;
@@ -388,8 +389,9 @@ async function generateDocuments(pk: string, workspace: string, body: Record<str
   if (!app.skills?.length) {
     return json(409, { error: "this application has not been analyzed yet" });
   }
-  if (!master) {
-    return json(409, { error: `upload the ${market} master profile first` });
+  // The resume carries the content; a master profile is an optional upgrade.
+  if (!master && profile?.analysisStatus !== "done") {
+    return json(409, { error: "upload your resume in //dashboard first" });
   }
 
   const now = new Date().toISOString();

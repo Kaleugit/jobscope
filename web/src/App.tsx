@@ -291,6 +291,7 @@ export default function App() {
         {route === "cv-maker" && (
           <CvMaker
             apps={apps}
+            hasResume={profile?.analysisStatus === "done"}
             masters={masters}
             market={market}
             docs={docs}

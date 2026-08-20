@@ -10,6 +10,7 @@ import {
   type Application,
   type Market,
   type MasterProfile,
+  type Profile,
 } from "../lib/db";
 import {
   extractJobInfo,
@@ -208,29 +209,51 @@ const MAX_GENERATION_ATTEMPTS = 3;
  */
 async function buildDocuments(message: DocsMessage) {
   const pk = userPk(message.workspace);
-  const [appResult, masterResult] = await Promise.all([
+  const [appResult, masterResult, profileResult] = await Promise.all([
     ddb.send(
       new GetCommand({
         TableName: TABLE_NAME,
-        Key: { pk: pk, sk: `APP#${message.applicationId}` },
+        Key: { pk, sk: `APP#${message.applicationId}` },
       })
     ),
     ddb.send(
       new GetCommand({
         TableName: TABLE_NAME,
-        Key: { pk: pk, sk: masterSk(message.market) },
+        Key: { pk, sk: masterSk(message.market) },
       })
+    ),
+    ddb.send(
+      new GetCommand({ TableName: TABLE_NAME, Key: { pk, sk: PROFILE_SK } })
     ),
   ]);
 
   const app = appResult.Item as Application | undefined;
   const master = masterResult.Item as MasterProfile | undefined;
-  if (!app?.skills?.length || !master?.content) {
-    throw new Error("application or master profile is no longer available");
+  const profile = profileResult.Item as Profile | undefined;
+  if (!app?.skills?.length) {
+    throw new Error("this application is no longer available");
+  }
+
+  // The uploaded resume is the default source; a master profile, when there is
+  // one, is the richer superset and takes over.
+  let sourceFile: { base64: string; mimeType: string } | undefined;
+  if (!master?.content) {
+    if (!profile?.s3Key) {
+      throw new Error("upload your resume before generating documents");
+    }
+    const object = await s3.send(
+      new GetObjectCommand({ Bucket: RESUME_BUCKET, Key: profile.s3Key })
+    );
+    const bytes = await object.Body!.transformToByteArray();
+    sourceFile = {
+      base64: Buffer.from(bytes).toString("base64"),
+      mimeType: object.ContentType ?? "application/pdf",
+    };
   }
 
   const prompt = buildGenerationPrompt({
-    masterProfile: master.content,
+    masterProfile: master?.content,
+    fromResumeFile: !master?.content,
     market: message.market,
     jobUrl: app.url,
     company: app.company,
@@ -245,7 +268,7 @@ async function buildDocuments(message: DocsMessage) {
   let fill = 0;
 
   for (let attempt = 1; attempt <= MAX_GENERATION_ATTEMPTS; attempt++) {
-    const candidate = await generateDocs(prompt, feedback);
+    const candidate = await generateDocs(prompt, feedback, sourceFile);
     const problems: string[] = [];
 
     if (

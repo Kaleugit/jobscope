@@ -186,7 +186,10 @@ Also for this market:
 - Strictly one to two pages is the local norm, and this tool holds the tighter line at one.`;
 
 export function buildGenerationPrompt(input: {
-  masterProfile: string;
+  /** The richer superset, when the user uploaded one. */
+  masterProfile?: string;
+  /** True when the attached file (the uploaded resume) is the only source. */
+  fromResumeFile?: boolean;
   market: "latam" | "fin";
   jobUrl?: string;
   company: string;
@@ -214,8 +217,10 @@ export function buildGenerationPrompt(input: {
       ? `POSTING URL (read it for the full requirements, the recruiter name and the tone): ${input.jobUrl}`
       : "",
     `SKILLS ALREADY EXTRACTED FROM THE POSTING: ${input.requiredSkills.join(", ")}`,
-    "MASTER PROFILE, the single source of truth. Nothing outside it may appear in the deliverables:",
-    input.masterProfile,
+    input.masterProfile
+      ? "MASTER PROFILE, the single source of truth. Nothing outside it may appear in the deliverables:"
+      : "SOURCE OF TRUTH: the attached resume. Every experience, project, date, employer and skill in the deliverables comes from it, and nothing may be added. When it does not cover a requirement, report the gap.",
+    input.masterProfile ?? "",
   ]
     .filter(Boolean)
     .join("\n\n---\n\n");
