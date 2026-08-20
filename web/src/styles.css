@@ -214,6 +214,38 @@ textarea {
   cursor: default;
 }
 
+/* ── pipeline status line (under the form) ──────────────────────────── */
+
+.pipeline-status {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.pipeline-status .cursor {
+  display: inline-block;
+  margin-left: 6px;
+}
+
+.status-done {
+  color: var(--text);
+}
+
+.status-failed {
+  color: var(--danger);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pipeline-status .cursor {
+    animation: blink 1s steps(1) infinite;
+  }
+  @keyframes blink {
+    50% {
+      opacity: 0;
+    }
+  }
+}
+
 /* ── error ──────────────────────────────────────────────────────────── */
 
 .error {

@@ -53,6 +53,10 @@ export default function App() {
   const [summary, setSummary] = useState<SkillsSummary | null>(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [trackedId, setTrackedId] = useState<string | null>(null);
+
+  // The application submitted last, surfaced as a status line by the form.
+  const tracked = apps?.find((a) => a.id === trackedId) ?? null;
 
   const refresh = useCallback(async () => {
     try {
@@ -77,7 +81,7 @@ export default function App() {
   // While the pipeline is extracting, poll for the result.
   useEffect(() => {
     if (!apps?.some((a) => a.analysisStatus === "pending")) return;
-    const id = setTimeout(() => void refresh(), 5000);
+    const id = setTimeout(() => void refresh(), 3000);
     return () => clearTimeout(id);
   }, [apps, refresh]);
 
@@ -86,8 +90,12 @@ export default function App() {
     const form = event.currentTarget;
     const data = new FormData(form);
     setSaving(true);
+    setTrackedId(null);
     try {
-      await api.create({ url: String(data.get("url") ?? "").trim() });
+      const created = await api.create({
+        url: String(data.get("url") ?? "").trim(),
+      });
+      setTrackedId(created.id);
       form.reset();
       await refresh();
     } catch (e) {
@@ -177,6 +185,37 @@ export default function App() {
                 {saving ? "saving..." : "add application"}
               </button>
             </div>
+
+            {(saving || tracked) && (
+              <p className="pipeline-status" role="status" aria-live="polite">
+                {saving && (
+                  <>
+                    {"> submitting"}
+                    <span className="cursor">█</span>
+                  </>
+                )}
+                {!saving && tracked?.analysisStatus === "pending" && (
+                  <>
+                    {"> reading the posting, extracting skills"}
+                    <span className="cursor">█</span>
+                  </>
+                )}
+                {!saving && tracked?.analysisStatus === "done" && (
+                  <span className="status-done">
+                    {`> added: ${tracked.role} at ${tracked.company} (${
+                      tracked.skills?.length ?? 0
+                    } skills)`}
+                  </span>
+                )}
+                {!saving && tracked?.analysisStatus === "failed" && (
+                  <span className="status-failed">
+                    {
+                      "> could not read this posting. the page may block robots."
+                    }
+                  </span>
+                )}
+              </p>
+            )}
           </form>
         </section>
 
