@@ -64,10 +64,11 @@ export function Home({
         <div className="intro-about">
           <h2 className="block-label">{"//about"}</h2>
           <p className="about-copy">
-            paste the link of a job posting. an async pipeline reads the page,
-            fills in company and role, and extracts the required skills. upload
-            your resume and it shows exactly which of those skills you are
-            missing.
+            paste the link of a job posting and an async pipeline reads the
+            page, fills in company and role, and pulls out the required skills.
+            upload your resume and the dashboard shows which of those skills you
+            are missing, ranked by how often the market asks for them. from
+            there, cv-maker writes a resume aimed at one specific posting.
           </p>
         </div>
       </section>
