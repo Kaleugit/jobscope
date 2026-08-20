@@ -20,6 +20,22 @@ export type ApplicationStatus =
   | "offer"
   | "rejected";
 
+export const PROFILE_SK = "PROFILE";
+
+export interface Profile {
+  pk: string;
+  sk: string;
+  fileName: string;
+  s3Key: string;
+  name?: string;
+  title?: string;
+  yearsExperience?: number;
+  skills?: string[];
+  analysisStatus: "pending" | "done" | "failed";
+  uploadedAt: string;
+  updatedAt: string;
+}
+
 export interface Application {
   pk: string;
   sk: string;

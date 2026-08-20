@@ -3,12 +3,14 @@ import {
   useEffect,
   useRef,
   useState,
+  type ChangeEvent,
   type FormEvent,
 } from "react";
 import {
   api,
   type Application,
   type ApplicationStatus,
+  type Profile,
   type SkillsSummary,
 } from "./api";
 
@@ -60,6 +62,9 @@ export default function App() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [trackedId, setTrackedId] = useState<string | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // The application submitted last, surfaced as a status line by the form.
   const tracked = apps?.find((a) => a.id === trackedId) ?? null;
@@ -67,7 +72,12 @@ export default function App() {
 
   const refresh = useCallback(async () => {
     try {
-      const [list, sum] = await Promise.all([api.list(), api.skillsSummary()]);
+      const [list, sum, prof] = await Promise.all([
+        api.list(),
+        api.skillsSummary(),
+        api.profile(),
+      ]);
+      setProfile(prof);
       setApps(
         list.sort((a, b) =>
           (b.createdAt ?? "").localeCompare(a.createdAt ?? "")
@@ -87,10 +97,38 @@ export default function App() {
 
   // While the pipeline is extracting, poll for the result.
   useEffect(() => {
-    if (!apps?.some((a) => a.analysisStatus === "pending")) return;
+    const analyzing =
+      apps?.some((a) => a.analysisStatus === "pending") ||
+      profile?.analysisStatus === "pending";
+    if (!analyzing) return;
     const id = setTimeout(() => void refresh(), 3000);
     return () => clearTimeout(id);
-  }, [apps, refresh]);
+  }, [apps, profile, refresh]);
+
+  async function onResumeChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    setUploading(true);
+    setError("");
+    try {
+      const created = await api.uploadResume(file);
+      setProfile(created);
+      await refresh();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function onResumeDelete() {
+    if (!confirm("Delete the uploaded resume and its extracted profile?")) return;
+    await api.deleteProfile();
+    setProfile(null);
+    await refresh();
+  }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -184,6 +222,95 @@ export default function App() {
         )}
 
         <section className="block">
+          <h2 className="block-label">{"//profile"}</h2>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,.docx,.txt"
+            onChange={onResumeChange}
+            hidden
+          />
+
+          {!profile && (
+            <div className="upload-empty">
+              <p className="block-note upload-note">
+                upload your resume to unlock the skill gap. it is read by the
+                same pipeline that reads job postings.
+              </p>
+              <button
+                type="button"
+                className="boxed-btn"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+              >
+                {uploading ? "uploading..." : "upload resume"}
+              </button>
+            </div>
+          )}
+
+          {profile && (
+            <div className="profile-card">
+              <div className="profile-file">
+                <span className="file-name">[file] {profile.fileName}</span>
+                <div className="app-actions">
+                  <button
+                    type="button"
+                    className="ghost-btn"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                  >
+                    {uploading ? "[uploading...]" : "[replace]"}
+                  </button>
+                  <button
+                    type="button"
+                    className="ghost-btn"
+                    onClick={onResumeDelete}
+                  >
+                    [delete]
+                  </button>
+                </div>
+              </div>
+
+              {profile.analysisStatus === "pending" && (
+                <p className="pipeline-status">
+                  {"> reading your resume"}
+                  <span className="cursor">█</span>
+                </p>
+              )}
+
+              {profile.analysisStatus === "failed" && (
+                <p className="pipeline-status status-failed">
+                  {"> could not read this file. try a text-based pdf."}
+                </p>
+              )}
+
+              {profile.analysisStatus === "done" && (
+                <>
+                  <p className="profile-meta">
+                    {[
+                      profile.name,
+                      profile.title,
+                      profile.yearsExperience
+                        ? `${profile.yearsExperience} years`
+                        : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" //")}
+                  </p>
+                  <div className="tags">
+                    {profile.skills?.map((s) => (
+                      <span key={s} className="tag">
+                        [{s}]
+                      </span>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </section>
+
+        <section className="block">
           <h2 className="block-label">{"//new application"}</h2>
           <form onSubmit={onSubmit} className="form">
             <div className="url-row">
@@ -252,6 +379,17 @@ export default function App() {
             <p className="block-note">
               {summary.analyzedApplications} of {summary.totalApplications}{" "}
               applications analyzed
+              {summary.hasProfile && (
+                <>
+                  {" // "}
+                  <span className="legend">
+                    <span className="legend-swatch owned" /> you have
+                  </span>
+                  <span className="legend">
+                    <span className="legend-swatch missing" /> gap
+                  </span>
+                </>
+              )}
             </p>
             <ul className="skills">
               {summary.skills.slice(0, 15).map((skill) => (
@@ -259,7 +397,9 @@ export default function App() {
                   <span className="skill-name">{skill.name}</span>
                   <span className="skill-track">
                     <span
-                      className="skill-bar"
+                      className={`skill-bar${
+                        summary.hasProfile && !skill.owned ? " missing" : ""
+                      }`}
                       style={{ width: `${(skill.count / maxCount) * 100}%` }}
                     />
                   </span>
@@ -267,6 +407,91 @@ export default function App() {
                 </li>
               ))}
             </ul>
+          </section>
+        )}
+
+        {summary?.hasProfile && summary.matches.length > 0 && (
+          <section className="block">
+            <h2 className="block-label">{"//skill gap"}</h2>
+
+            <div className="stats">
+              <div className="stat">
+                <span className="stat-value">{summary.averageMatch}%</span>
+                <span className="stat-label">average match</span>
+              </div>
+              <div className="stat">
+                <span className="stat-value">
+                  {summary.skills.length - summary.missingSkills.length}/
+                  {summary.skills.length}
+                </span>
+                <span className="stat-label">requested skills covered</span>
+              </div>
+              <div className="stat">
+                <span className="stat-value">
+                  {summary.missingSkills.length}
+                </span>
+                <span className="stat-label">skills to learn</span>
+              </div>
+            </div>
+
+            {summary.missingSkills.length > 0 && (
+              <div className="gap-group">
+                <h3 className="gap-title">{"//learn next"}</h3>
+                <p className="block-note">
+                  most requested skills missing from your resume
+                </p>
+                <div className="tags">
+                  {summary.missingSkills.slice(0, 12).map((s) => (
+                    <span key={s.name} className="tag missing">
+                      [{s.name} x{s.count}]
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="gap-group">
+              <h3 className="gap-title">{"//match per application"}</h3>
+              <ul className="matches">
+                {summary.matches.map((m) => (
+                  <li key={m.id}>
+                    <span className="match-role">
+                      {m.role}
+                      <span className="app-company">{" //"}{m.company}</span>
+                    </span>
+                    <span className="skill-track">
+                      <span
+                        className="skill-bar"
+                        style={{ width: `${m.score}%` }}
+                      />
+                    </span>
+                    <span className="match-score">
+                      {m.score}%
+                      <span className="match-detail">
+                        {" "}
+                        {m.owned}/{m.required}
+                      </span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {summary.unusedSkills.length > 0 && (
+              <div className="gap-group">
+                <h3 className="gap-title">{"//not requested"}</h3>
+                <p className="block-note">
+                  skills you have that these roles do not ask for
+                </p>
+                <div className="tags">
+                  {summary.unusedSkills.slice(0, 12).map((s) => (
+                    <span key={s} className="tag">
+                      [{s}]
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </section>
         )}
 

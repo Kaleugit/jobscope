@@ -51,6 +51,90 @@ function parseJobInfo(text: string): JobInfo {
   return { company, role, skills };
 }
 
+export interface ResumeProfile {
+  name?: string;
+  title?: string;
+  yearsExperience?: number;
+  skills: string[];
+}
+
+const RESUME_RULES = `You are a technical recruiter reading a resume. Extract:
+- "name": the candidate's full name
+- "title": their current or most recent job title
+- "yearsExperience": total years of professional experience as a number
+- "skills": technical and professional skills the candidate actually has (tools, languages, frameworks, cloud services, methodologies). Normalize names (e.g. "ReactJS" -> "React", "Amazon Web Services" -> "AWS"). Maximum 40, most relevant first.
+
+Return ONLY a JSON object like {"name": "...", "title": "...", "yearsExperience": 5, "skills": ["...", "..."]} with no markdown fences and no commentary. If the document is not a resume, return {"error": "<short reason>"}.`;
+
+export async function extractResumeProfile(
+  fileBase64: string,
+  mimeType: string
+): Promise<ResumeProfile> {
+  if (!GEMINI_API_KEY) {
+    throw new Error("GEMINI_API_KEY is not configured");
+  }
+
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+
+  const res = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [
+        {
+          parts: [
+            { text: RESUME_RULES },
+            { inline_data: { mime_type: mimeType, data: fileBase64 } },
+          ],
+        },
+      ],
+      generationConfig: { temperature: 0 },
+    }),
+  });
+
+  if (!res.ok) {
+    const errBody = await res.text();
+    throw new Error(`Gemini API error ${res.status}: ${errBody.slice(0, 500)}`);
+  }
+
+  const data = (await res.json()) as {
+    candidates?: { content?: { parts?: { text?: string }[] } }[];
+  };
+  const text =
+    data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ??
+    "";
+
+  const cleaned = text.replace(/```(?:json)?/g, "").trim();
+  const match = cleaned.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error(`LLM returned no JSON: ${cleaned.slice(0, 200)}`);
+
+  const parsed = JSON.parse(match[0]) as Record<string, unknown>;
+  if (typeof parsed.error === "string") {
+    throw new Error(`LLM could not read the resume: ${parsed.error}`);
+  }
+
+  const skills = Array.isArray(parsed.skills)
+    ? parsed.skills
+        .filter((s): s is string => typeof s === "string" && s.trim().length > 0)
+        .map((s) => s.trim())
+        .slice(0, 40)
+    : [];
+
+  if (skills.length === 0) {
+    throw new Error("LLM response had no skills");
+  }
+
+  return {
+    name: typeof parsed.name === "string" ? parsed.name.trim() : undefined,
+    title: typeof parsed.title === "string" ? parsed.title.trim() : undefined,
+    yearsExperience:
+      typeof parsed.yearsExperience === "number"
+        ? parsed.yearsExperience
+        : undefined,
+    skills,
+  };
+}
+
 export async function extractJobInfo(input: {
   url?: string;
   jdText?: string;

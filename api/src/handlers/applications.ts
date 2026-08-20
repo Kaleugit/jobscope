@@ -10,11 +10,28 @@ import {
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
+import { DeleteObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { randomUUID } from "node:crypto";
-import { ddb, TABLE_NAME, USER_PK, type Application } from "../lib/db";
+import {
+  ddb,
+  PROFILE_SK,
+  TABLE_NAME,
+  USER_PK,
+  type Application,
+  type Profile,
+} from "../lib/db";
 
 const sqs = new SQSClient({});
+const s3 = new S3Client({});
 const ANALYZE_QUEUE_URL = process.env.ANALYZE_QUEUE_URL ?? "";
+const RESUME_BUCKET = process.env.RESUME_BUCKET ?? "";
+
+const ALLOWED_RESUME_TYPES = [
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "text/plain",
+];
 
 const STATUSES = ["wishlist", "applied", "interview", "offer", "rejected"];
 
@@ -118,17 +135,57 @@ async function updateApplication(id: string, body: Record<string, unknown>) {
   return json(200, result.Attributes);
 }
 
+async function getProfile(): Promise<Profile | undefined> {
+  const result = await ddb.send(
+    new GetCommand({
+      TableName: TABLE_NAME,
+      Key: { pk: USER_PK, sk: PROFILE_SK },
+    })
+  );
+  return result.Item as Profile | undefined;
+}
+
+// Skills come from two different LLM calls, so compare them loosely.
+const normalizeSkill = (s: string) => s.toLowerCase().replace(/[.\-_\s]/g, "");
+
 async function skillsSummary() {
-  const apps = await listApplications();
+  const [apps, profile] = await Promise.all([listApplications(), getProfile()]);
+
   const counts = new Map<string, number>();
   for (const app of apps) {
     for (const skill of app.skills ?? []) {
       counts.set(skill, (counts.get(skill) ?? 0) + 1);
     }
   }
+
+  const mySkills = profile?.skills ?? [];
+  const mySet = new Set(mySkills.map(normalizeSkill));
+  const hasSkill = (name: string) => mySet.has(normalizeSkill(name));
+
   const skills = [...counts.entries()]
-    .map(([name, count]) => ({ name, count }))
+    .map(([name, count]) => ({ name, count, owned: hasSkill(name) }))
     .sort((a, b) => b.count - a.count);
+
+  const requestedSet = new Set([...counts.keys()].map(normalizeSkill));
+
+  // Per-application coverage: how much of what they ask for you already have.
+  const analyzed = apps.filter(
+    (a) => a.analysisStatus === "done" && (a.skills?.length ?? 0) > 0
+  );
+  const matches = analyzed
+    .map((a) => {
+      const required = a.skills ?? [];
+      const owned = required.filter(hasSkill).length;
+      return {
+        id: a.id,
+        company: a.company,
+        role: a.role,
+        required: required.length,
+        owned,
+        score: Math.round((owned / required.length) * 100),
+      };
+    })
+    .sort((a, b) => b.score - a.score);
 
   return json(200, {
     totalApplications: apps.length,
@@ -137,7 +194,99 @@ async function skillsSummary() {
       STATUSES.map((s) => [s, apps.filter((a) => a.status === s).length])
     ),
     skills,
+    hasProfile: Boolean(profile && profile.analysisStatus === "done"),
+    missingSkills: skills.filter((s) => !s.owned),
+    unusedSkills: mySkills.filter((s) => !requestedSet.has(normalizeSkill(s))),
+    matches,
+    averageMatch: matches.length
+      ? Math.round(matches.reduce((sum, m) => sum + m.score, 0) / matches.length)
+      : 0,
   });
+}
+
+async function createUploadUrl(body: Record<string, unknown>) {
+  const fileName = String(body.fileName ?? "").trim();
+  const contentType = String(body.contentType ?? "").trim();
+
+  if (!fileName) return json(400, { error: "fileName is required" });
+  if (!ALLOWED_RESUME_TYPES.includes(contentType)) {
+    return json(400, { error: "resume must be a PDF, DOCX or TXT file" });
+  }
+
+  const key = `resumes/${randomUUID()}`;
+  const uploadUrl = await getSignedUrl(
+    s3,
+    new PutObjectCommand({
+      Bucket: RESUME_BUCKET,
+      Key: key,
+      ContentType: contentType,
+    }),
+    { expiresIn: 300 }
+  );
+
+  return json(200, { uploadUrl, key });
+}
+
+async function startResumeAnalysis(body: Record<string, unknown>) {
+  const key = String(body.key ?? "").trim();
+  const fileName = String(body.fileName ?? "").trim();
+  const contentType = String(body.contentType ?? "").trim();
+
+  if (!key.startsWith("resumes/") || !fileName) {
+    return json(400, { error: "key and fileName are required" });
+  }
+
+  const now = new Date().toISOString();
+  const previous = await getProfile();
+
+  const profile: Profile = {
+    pk: USER_PK,
+    sk: PROFILE_SK,
+    fileName,
+    s3Key: key,
+    analysisStatus: "pending",
+    uploadedAt: now,
+    updatedAt: now,
+  };
+  await ddb.send(new PutCommand({ TableName: TABLE_NAME, Item: profile }));
+
+  // Replacing a resume: drop the old object so the bucket does not pile up.
+  if (previous?.s3Key && previous.s3Key !== key) {
+    await s3
+      .send(
+        new DeleteObjectCommand({ Bucket: RESUME_BUCKET, Key: previous.s3Key })
+      )
+      .catch((e) => console.error("Failed to delete previous resume:", e));
+  }
+
+  if (ANALYZE_QUEUE_URL) {
+    await sqs.send(
+      new SendMessageCommand({
+        QueueUrl: ANALYZE_QUEUE_URL,
+        MessageBody: JSON.stringify({ kind: "resume", key, contentType }),
+      })
+    );
+  }
+
+  return json(202, profile);
+}
+
+async function deleteProfile() {
+  const profile = await getProfile();
+  if (profile?.s3Key) {
+    await s3
+      .send(
+        new DeleteObjectCommand({ Bucket: RESUME_BUCKET, Key: profile.s3Key })
+      )
+      .catch((e) => console.error("Failed to delete resume object:", e));
+  }
+  await ddb.send(
+    new DeleteCommand({
+      TableName: TABLE_NAME,
+      Key: { pk: USER_PK, sk: PROFILE_SK },
+    })
+  );
+  return json(204, {});
 }
 
 export async function handler(
@@ -182,6 +331,16 @@ export async function handler(
         return json(204, {});
       case "GET /skills/summary":
         return await skillsSummary();
+      case "GET /profile": {
+        const profile = await getProfile();
+        return json(200, profile ?? null);
+      }
+      case "POST /profile/upload-url":
+        return await createUploadUrl(body);
+      case "POST /profile/analyze":
+        return await startResumeAnalysis(body);
+      case "DELETE /profile":
+        return await deleteProfile();
       default:
         return json(404, { error: `unknown route: ${event.routeKey}` });
     }

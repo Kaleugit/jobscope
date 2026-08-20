@@ -20,7 +20,7 @@ import {
   HttpMethod,
 } from "aws-cdk-lib/aws-apigatewayv2";
 import { HttpLambdaIntegration } from "aws-cdk-lib/aws-apigatewayv2-integrations";
-import { BlockPublicAccess, Bucket } from "aws-cdk-lib/aws-s3";
+import { BlockPublicAccess, Bucket, HttpMethods } from "aws-cdk-lib/aws-s3";
 import {
   Distribution,
   ViewerProtocolPolicy,
@@ -49,6 +49,22 @@ export class JobscopeStack extends Stack {
       removalPolicy: RemovalPolicy.DESTROY, // portfolio project: allow clean teardown
     });
 
+    // Resumes are uploaded straight from the browser with a presigned URL,
+    // so the file never passes through API Gateway's payload limit.
+    const resumeBucket = new Bucket(this, "ResumeBucket", {
+      blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
+      removalPolicy: RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
+      cors: [
+        {
+          allowedMethods: [HttpMethods.PUT],
+          allowedOrigins: ["*"],
+          allowedHeaders: ["*"],
+          maxAge: 3000,
+        },
+      ],
+    });
+
     // ── Async AI pipeline ───────────────────────────────────────────────
     const analyzeDlq = new Queue(this, "AnalyzeDLQ", {
       retentionPeriod: Duration.days(14),
@@ -66,11 +82,13 @@ export class JobscopeStack extends Stack {
       memorySize: 256,
       environment: {
         TABLE_NAME: table.tableName,
+        RESUME_BUCKET: resumeBucket.bucketName,
         GEMINI_API_KEY: process.env.GEMINI_API_KEY ?? "",
         GEMINI_MODEL: process.env.GEMINI_MODEL ?? "gemini-3.6-flash",
       },
     });
     table.grantReadWriteData(analyzeFn);
+    resumeBucket.grantRead(analyzeFn);
     analyzeFn.addEventSource(
       new SqsEventSource(analyzeQueue, {
         batchSize: 5,
@@ -87,10 +105,13 @@ export class JobscopeStack extends Stack {
       environment: {
         TABLE_NAME: table.tableName,
         ANALYZE_QUEUE_URL: analyzeQueue.queueUrl,
+        RESUME_BUCKET: resumeBucket.bucketName,
       },
     });
     table.grantReadWriteData(apiFn);
     analyzeQueue.grantSendMessages(apiFn);
+    resumeBucket.grantReadWrite(apiFn);
+    resumeBucket.grantDelete(apiFn);
 
     const httpApi = new HttpApi(this, "HttpApi", {
       corsPreflight: {
@@ -115,6 +136,10 @@ export class JobscopeStack extends Stack {
       ["/applications/{id}", HttpMethod.DELETE],
       // "/analytics/*" would be blocked by ad-blocker filter lists (ERR_BLOCKED_BY_CLIENT)
       ["/skills/summary", HttpMethod.GET],
+      ["/profile", HttpMethod.GET],
+      ["/profile", HttpMethod.DELETE],
+      ["/profile/upload-url", HttpMethod.POST],
+      ["/profile/analyze", HttpMethod.POST],
     ];
     for (const [path, method] of routes) {
       httpApi.addRoutes({ path, methods: [method], integration });
