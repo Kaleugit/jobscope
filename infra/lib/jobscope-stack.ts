@@ -27,6 +27,12 @@ import {
 } from "aws-cdk-lib/aws-cloudfront";
 import { S3BucketOrigin } from "aws-cdk-lib/aws-cloudfront-origins";
 import { BucketDeployment, Source } from "aws-cdk-lib/aws-s3-deployment";
+import {
+  OpenIdConnectProvider,
+  PolicyStatement,
+  Role,
+  WebIdentityPrincipal,
+} from "aws-cdk-lib/aws-iam";
 import type { Construct } from "constructs";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
@@ -145,6 +151,38 @@ export class JobscopeStack extends Stack {
       });
     }
 
+    // ── CI/CD: GitHub Actions deploys via OIDC (no stored access keys) ──
+    const githubOidc = new OpenIdConnectProvider(this, "GithubOidc", {
+      url: "https://token.actions.githubusercontent.com",
+      clientIds: ["sts.amazonaws.com"],
+    });
+
+    const githubDeployRole = new Role(this, "GithubDeployRole", {
+      assumedBy: new WebIdentityPrincipal(
+        githubOidc.openIdConnectProviderArn,
+        {
+          StringEquals: {
+            "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+          },
+          StringLike: {
+            "token.actions.githubusercontent.com:sub":
+              "repo:Kaleugit/jobscope:*",
+          },
+        }
+      ),
+      description: "Assumed by GitHub Actions to run cdk deploy",
+    });
+    // CDK deploys by assuming the cdk-* bootstrap roles; that's all CI needs.
+    githubDeployRole.addToPolicy(
+      new PolicyStatement({
+        actions: ["sts:AssumeRole"],
+        resources: [`arn:aws:iam::${this.account}:role/cdk-*`],
+      })
+    );
+
+    new CfnOutput(this, "GithubDeployRoleArn", {
+      value: githubDeployRole.roleArn,
+    });
     new CfnOutput(this, "ApiUrl", { value: httpApi.apiEndpoint });
     new CfnOutput(this, "WebUrl", {
       value: `https://${distribution.distributionDomainName}`,
