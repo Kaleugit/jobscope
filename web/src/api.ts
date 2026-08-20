@@ -58,5 +58,5 @@ export const api = {
     }),
   remove: (id: string) =>
     request<void>(`/applications/${id}`, { method: "DELETE" }),
-  skillsSummary: () => request<SkillsSummary>("/analytics/skills"),
+  skillsSummary: () => request<SkillsSummary>("/skills/summary"),
 };

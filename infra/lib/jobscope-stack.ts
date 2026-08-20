@@ -107,7 +107,8 @@ export class JobscopeStack extends Stack {
       ["/applications/{id}", HttpMethod.GET],
       ["/applications/{id}", HttpMethod.PATCH],
       ["/applications/{id}", HttpMethod.DELETE],
-      ["/analytics/skills", HttpMethod.GET],
+      // "/analytics/*" would be blocked by ad-blocker filter lists (ERR_BLOCKED_BY_CLIENT)
+      ["/skills/summary", HttpMethod.GET],
     ];
     for (const [path, method] of routes) {
       httpApi.addRoutes({ path, methods: [method], integration });

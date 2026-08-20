@@ -175,7 +175,7 @@ export async function handler(
           })
         );
         return json(204, {});
-      case "GET /analytics/skills":
+      case "GET /skills/summary":
         return await skillsSummary();
       default:
         return json(404, { error: `unknown route: ${event.routeKey}` });
