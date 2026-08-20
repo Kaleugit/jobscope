@@ -50,15 +50,6 @@ export function Dev({ session }: { session: Session }) {
     await refresh();
   }
 
-  if (!session.isMaster) {
-    return (
-      <section className="block">
-        <h2 className="block-label">{"//dev"}</h2>
-        <p className="empty">master account only.</p>
-      </section>
-    );
-  }
-
   return (
     <>
       <section className="block">

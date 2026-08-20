@@ -17,6 +17,8 @@ export function Login({ onSignedIn }: { onSignedIn: (s: Session) => void }) {
         String(data.get("password") ?? "")
       );
       saveSession(session);
+      // Always land on the dashboard, whatever hash the URL carried in.
+      window.location.hash = "#/home";
       onSignedIn(session);
     } catch {
       setError("invalid username or password");

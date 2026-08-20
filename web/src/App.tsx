@@ -86,6 +86,16 @@ export default function App() {
     if (session) void refresh();
   }, [session, refresh]);
 
+  // For anyone but the master the dev route does not exist: it renders the
+  // dashboard and the URL is rewritten, so nothing confirms the path is real.
+  const isDevRoute = route === DEV_ROUTE && session?.isMaster === true;
+
+  useEffect(() => {
+    if (route === DEV_ROUTE && session && !session.isMaster) {
+      window.location.hash = "#/home";
+    }
+  }, [route, session]);
+
   function signOut() {
     saveSession(null);
     setSession(null);
@@ -232,7 +242,7 @@ export default function App() {
           </div>
         )}
 
-        {route === "home" && (
+        {(route === "home" || (route === DEV_ROUTE && !isDevRoute)) && (
           <Home
             profile={profile}
             summary={summary}
@@ -255,7 +265,7 @@ export default function App() {
           />
         )}
 
-        {route === DEV_ROUTE && <Dev session={session} />}
+        {isDevRoute && <Dev session={session} />}
 
         {route === "cv-maker" && (
           <CvMaker
