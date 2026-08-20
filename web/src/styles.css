@@ -772,7 +772,9 @@ textarea {
   margin-top: 48px;
   padding: 22px 32px 28px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 10px;
+  font-style: italic;
+  text-align: center;
 }
 
 /* ── mobile collapse ────────────────────────────────────────────────── */
