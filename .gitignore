@@ -5,6 +5,7 @@ cdk.out/
 .env.*
 # public API URL only — CI needs it to build the frontend
 !web/.env.production
+!.env.example
 outputs.json
 *.local
 .DS_Store

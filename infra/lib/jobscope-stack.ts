@@ -8,6 +8,7 @@ import {
 import {
   AttributeType,
   BillingMode,
+  ProjectionType,
   Table,
 } from "aws-cdk-lib/aws-dynamodb";
 import { Queue } from "aws-cdk-lib/aws-sqs";
@@ -47,6 +48,15 @@ export class JobscopeStack extends Stack {
       sortKey: { name: "sk", type: AttributeType.STRING },
       billingMode: BillingMode.PAY_PER_REQUEST,
       removalPolicy: RemovalPolicy.DESTROY, // portfolio project: allow clean teardown
+    });
+
+    // Discovery panel lists jobs by age: gsi1pk = DISC#JOBS, gsi1sk = <publishedAt>#<jobKey>.
+    // Job items are small (the description lives in its own item), so ALL costs little.
+    table.addGlobalSecondaryIndex({
+      indexName: "gsi1",
+      partitionKey: { name: "gsi1pk", type: AttributeType.STRING },
+      sortKey: { name: "gsi1sk", type: AttributeType.STRING },
+      projectionType: ProjectionType.ALL,
     });
 
     // Resumes are uploaded straight from the browser with a presigned URL,
