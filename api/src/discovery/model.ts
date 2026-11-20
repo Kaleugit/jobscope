@@ -133,8 +133,8 @@ export interface DiscoveredJob {
   descriptionSource: string;
   descriptionHash: string;
 
-  /** True when the job is new or its description changed: the filters and the
-   *  LLM step have not judged this version yet. */
+  /** True when the job is new or its description changed: the deterministic
+   *  filters have not judged this version yet. The LLM step is tracked by llmStatus. */
   needsEvaluation: boolean;
   /** Area pre-filter verdict; absent until the filters run. */
   areaOk?: boolean;
