@@ -6,7 +6,6 @@ import { parseAshby, parseGreenhouse, parseLever } from "../src/discovery/source
 import { parseHimalayas } from "../src/discovery/sources/himalayas";
 import { parseRemoteOk } from "../src/discovery/sources/remoteok";
 import { parseRemotive } from "../src/discovery/sources/remotive";
-import { parseWwrRss, splitWwrTitle } from "../src/discovery/sources/weworkremotely";
 
 // Fixtures are real responses captured on 2026-11-20, trimmed to a few items
 // with descriptions cut short (this repo is public; jobs are not republished).
@@ -76,25 +75,6 @@ describe("remote ok", () => {
   });
 
   it("normalizes every job", () => expectWellFormed(jobs));
-});
-
-describe("we work remotely", () => {
-  const jobs = parseWwrRss(fixture("wwr.rss"));
-
-  it("normalizes every item", () => expectWellFormed(jobs));
-
-  it("splits 'Company: Role' on the first colon only", () => {
-    expect(splitWwrTitle("Cribl: Staff Software Engineer, Search Core")).toEqual({
-      company: "Cribl",
-      title: "Staff Software Engineer, Search Core",
-    });
-    expect(splitWwrTitle("Acme: Engineer: Platform")).toEqual({ company: "Acme", title: "Engineer: Platform" });
-  });
-
-  it("keeps the region as a hint", () => {
-    expect(jobs.some((j) => j.hints.includes("region:Anywhere in the World"))).toBe(true);
-    expect(jobs.some((j) => j.hints.includes("region:USA Only"))).toBe(true);
-  });
 });
 
 describe("greenhouse", () => {

@@ -2,7 +2,6 @@ import { atsSource } from "./sources/ats";
 import { himalayas } from "./sources/himalayas";
 import { remoteOk } from "./sources/remoteok";
 import { remotive } from "./sources/remotive";
-import { weWorkRemotely } from "./sources/weworkremotely";
 import { DISC_RUN_PK, type DiscoveredJob, type Run, type Source, type SourceRunLog } from "./model";
 import { lastRun, listCompanies, upsertPostings, type KeyValueStore } from "./store";
 
@@ -17,7 +16,6 @@ export async function buildSources(store: KeyValueStore): Promise<Source[]> {
     himalayas(process.env.HIMALAYAS_API_KEY || undefined),
     remotive(),
     remoteOk(),
-    weWorkRemotely(),
     ...companies.map(atsSource),
   ];
 }

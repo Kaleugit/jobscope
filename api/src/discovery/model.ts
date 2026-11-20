@@ -47,7 +47,10 @@ export const DISC_JOBS_GSI1PK = "DISC#JOBS";
 export const ATS_KINDS = ["greenhouse", "lever", "ashby"] as const;
 export type AtsKind = (typeof ATS_KINDS)[number];
 
-export const AGGREGATORS = ["himalayas", "remotive", "remoteok", "weworkremotely"] as const;
+// We Work Remotely was dropped on 2026-11-20: most of its listings lock the
+// "Apply" button behind a paid membership, the RSS does not say which, and
+// the job pages sit behind an anti-bot challenge.
+export const AGGREGATORS = ["himalayas", "remotive", "remoteok"] as const;
 export type Aggregator = (typeof AGGREGATORS)[number];
 
 /** A source is an aggregator or one company's ATS board ("greenhouse:coderoad"). */

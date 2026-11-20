@@ -8,7 +8,6 @@ import { COMPANIES_SEED } from "../src/discovery/companies-seed";
 import { himalayas } from "../src/discovery/sources/himalayas";
 import { remotive } from "../src/discovery/sources/remotive";
 import { remoteOk } from "../src/discovery/sources/remoteok";
-import { weWorkRemotely } from "../src/discovery/sources/weworkremotely";
 import { atsSource } from "../src/discovery/sources/ats";
 import { DISC_JOB_PK, type DiscoveredJob, type Run } from "../src/discovery/model";
 import { memoryStore } from "../src/discovery/memory-store";
@@ -20,7 +19,6 @@ async function main() {
     himalayas(process.env.HIMALAYAS_API_KEY || undefined),
     remotive(),
     remoteOk(),
-    weWorkRemotely(),
     ...COMPANIES_SEED.map(atsSource),
   ];
   const started = Date.now();

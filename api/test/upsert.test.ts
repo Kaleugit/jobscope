@@ -54,9 +54,9 @@ describe("upsert", () => {
     const db = memoryStore();
     const fromWwr: NormalizedJob = {
       ...base,
-      source: "weworkremotely",
-      externalId: "https://weworkremotely.com/remote-jobs/acme-backend",
-      url: "https://weworkremotely.com/remote-jobs/acme-backend",
+      source: "remoteok",
+      externalId: "rok-77",
+      url: "https://remoteok.com/remote-jobs/acme-backend",
       company: "ACME Inc.",
       title: "Backend Engineer - LATAM",
       description: "A different write-up of the same job.",
@@ -68,7 +68,7 @@ describe("upsert", () => {
     expect(result.newJobs).toBe(1);
     expect(db.jobs()).toHaveLength(1);
     const [job] = db.jobs();
-    expect(job.sources.map((s) => s.source).sort()).toEqual(["himalayas", "weworkremotely"]);
+    expect(job.sources.map((s) => s.source).sort()).toEqual(["himalayas", "remoteok"]);
     // Age comes from the earliest publication anywhere.
     expect(job.publishedAt).toBe("2026-11-20T08:00:00.000Z");
     expect(job.gsi1sk.startsWith("2026-11-20T08:00:00.000Z#")).toBe(true);
