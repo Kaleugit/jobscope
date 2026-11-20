@@ -214,6 +214,16 @@ export class JobscopeStack extends Stack {
       ["/docs/{id}", HttpMethod.DELETE],
       // Owner Area (master account only, checked in the handler)
       ["/discovery/run", HttpMethod.POST],
+      ["/discovery/jobs", HttpMethod.GET],
+      ["/discovery/jobs/{key}", HttpMethod.GET],
+      ["/discovery/jobs/{key}", HttpMethod.PATCH],
+      ["/discovery/jobs/{key}/promote", HttpMethod.POST],
+      ["/discovery/runs", HttpMethod.GET],
+      ["/discovery/settings", HttpMethod.GET],
+      ["/discovery/settings", HttpMethod.PUT],
+      ["/discovery/companies", HttpMethod.GET],
+      ["/discovery/companies", HttpMethod.POST],
+      ["/discovery/companies/{ats}/{token}", HttpMethod.PATCH],
     ];
     for (const [path, method] of routes) {
       httpApi.addRoutes({ path, methods: [method], integration });

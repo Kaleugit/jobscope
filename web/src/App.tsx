@@ -20,12 +20,13 @@ import {
   type SkillsSummary,
 } from "./api";
 import { Header } from "./Header";
-import { DEV_ROUTE, useRoute } from "./useRoute";
+import { DEV_ROUTE, DISCOVERY_ROUTE, useRoute } from "./useRoute";
 import { Home } from "./pages/Home";
 import { Applications } from "./pages/Applications";
 import { CvMaker } from "./pages/CvMaker";
 import { Login } from "./pages/Login";
 import { Dev } from "./pages/Dev";
+import { Discovery } from "./pages/Discovery";
 import { Onboarding, shouldOnboard } from "./Onboarding";
 
 export default function App() {
@@ -93,9 +94,10 @@ export default function App() {
   // For anyone but the master the dev route does not exist: it renders the
   // dashboard and the URL is rewritten, so nothing confirms the path is real.
   const isDevRoute = route === DEV_ROUTE && session?.isMaster === true;
+  const isDiscoveryRoute = route === DISCOVERY_ROUTE && session?.isMaster === true;
 
   useEffect(() => {
-    if (route === DEV_ROUTE && session && !session.isMaster) {
+    if ((route === DEV_ROUTE || route === DISCOVERY_ROUTE) && session && !session.isMaster) {
       window.location.hash = "#/home";
     }
   }, [route, session]);
@@ -263,7 +265,9 @@ export default function App() {
           </div>
         )}
 
-        {(route === "home" || (route === DEV_ROUTE && !isDevRoute)) && (
+        {(route === "home" ||
+          (route === DEV_ROUTE && !isDevRoute) ||
+          (route === DISCOVERY_ROUTE && !isDiscoveryRoute)) && (
           <Home
             profile={profile}
             summary={summary}
@@ -287,6 +291,8 @@ export default function App() {
         )}
 
         {isDevRoute && <Dev session={session} />}
+
+        {isDiscoveryRoute && <Discovery onPromoted={() => void refresh()} />}
 
         {route === "cv-maker" && (
           <CvMaker

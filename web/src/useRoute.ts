@@ -3,11 +3,14 @@ import { useEffect, useState } from "react";
 export const ROUTES = ["home", "applications", "cv-maker"] as const;
 /** Not in the nav on purpose: account management lives behind a known path. */
 export const DEV_ROUTE = "dev99";
-export type Route = (typeof ROUTES)[number] | typeof DEV_ROUTE;
+/** The Owner Area: in the nav only for the master account; for anyone else it does not exist. */
+export const DISCOVERY_ROUTE = "discovery";
+export type Route = (typeof ROUTES)[number] | typeof DEV_ROUTE | typeof DISCOVERY_ROUTE;
 
 function currentRoute(): Route {
   const hash = window.location.hash.replace(/^#\/?/, "");
   if (hash === DEV_ROUTE) return DEV_ROUTE;
+  if (hash === DISCOVERY_ROUTE) return DISCOVERY_ROUTE;
   return (ROUTES as readonly string[]).includes(hash) ? (hash as Route) : "home";
 }
 

@@ -90,6 +90,92 @@ export interface GeneratedDocs {
   createdAt: string;
 }
 
+// ── Discovery (Owner Area, master account only) ─────────────────────────
+
+export type LatamBucket = "confirmed" | "likely" | "discarded";
+export type Triage = "new" | "ignored" | "promoted";
+export type LlmStatus = "not_needed" | "pending" | "done" | "review";
+export type JobWindow = "today" | "24h" | "48h" | "7d";
+
+export interface DiscoveredJob {
+  jobKey: string;
+  company: string;
+  title: string;
+  locationRaw: string;
+  tags: string[];
+  salary?: string;
+  publishedAt: string;
+  firstSeenAt: string;
+  lastSeenAt: string;
+  sources: { source: string; externalId: string; url: string }[];
+  latam?: { bucket: LatamBucket; decidedBy: "rule" | "llm"; evidence?: string; negativeTerm?: string };
+  experienceBarrier?: { blocked: boolean; reason?: string };
+  localMarket?: boolean;
+  agency?: boolean;
+  contractType?: "contractor" | "eor" | "full_time_local" | "unknown";
+  timezoneRequirement?: string | null;
+  score?: number;
+  scoreReason?: string;
+  llmStatus: LlmStatus;
+  reviewReason?: string;
+  discardReason?: string;
+  triage: Triage;
+  triageHistory: { triage: Triage; at: string }[];
+  applicationId?: string;
+  applicationStatus?: ApplicationStatus;
+  alertedAt?: string;
+}
+
+export interface JobsPage {
+  window: JobWindow;
+  since: string;
+  counts: { main: number; pending: number; review: number; discarded: number };
+  jobs: DiscoveredJob[];
+}
+
+export interface DiscoveryRun {
+  sk: string;
+  trigger: "schedule" | "manual";
+  startedAt: string;
+  finishedAt?: string;
+  sources: { source: string; fetched: number; errors: number; errorMessages?: string[]; durationMs: number }[];
+  newJobs: number;
+  llmCalls: number;
+  alertsSent: number;
+  evaluation?: {
+    evaluated: number;
+    discardedByRules: number;
+    scored: number;
+    review: number;
+    discardedByLlm: number;
+    pending: number;
+    llmStoppedBy?: "cap" | "quota";
+    llmErrors?: string[];
+    alertSkipped?: string;
+    expired: number;
+  };
+}
+
+export interface DiscoverySettings {
+  alertEmail?: string;
+  alertEmailStatus?: "pending" | "verified";
+  verifiedAlertEmail?: string;
+  alertThreshold: number;
+  ownerYears: number;
+  adherenceProfile: string;
+  updatedAt: string;
+}
+
+export interface AtsCompany {
+  ats: "greenhouse" | "lever" | "ashby";
+  token: string;
+  name: string;
+  active: boolean;
+  totalJobsSeen: number;
+  latamJobsSeen: number;
+  lastLatamJobAt?: string;
+}
+
 export interface Session {
   token: string;
   username: string;
@@ -210,6 +296,27 @@ export const api = {
     request<void>(`/docs/${applicationId}`, { method: "DELETE" }),
 
   deleteProfile: () => request<void>("/profile", { method: "DELETE" }),
+
+  discovery: {
+    jobs: (window: JobWindow) => request<JobsPage>(`/discovery/jobs?window=${window}`),
+    job: (key: string) => request<DiscoveredJob & { description: string }>(`/discovery/jobs/${key}`),
+    triage: (key: string, triage: "new" | "ignored") =>
+      request<DiscoveredJob>(`/discovery/jobs/${key}`, { method: "PATCH", body: JSON.stringify({ triage }) }),
+    promote: (key: string) => request<Application>(`/discovery/jobs/${key}/promote`, { method: "POST" }),
+    run: () => request<{ started: boolean }>("/discovery/run", { method: "POST" }),
+    runs: () => request<DiscoveryRun[]>("/discovery/runs"),
+    settings: () => request<DiscoverySettings>("/discovery/settings"),
+    saveSettings: (data: Partial<DiscoverySettings>) =>
+      request<DiscoverySettings>("/discovery/settings", { method: "PUT", body: JSON.stringify(data) }),
+    companies: () => request<AtsCompany[]>("/discovery/companies"),
+    addCompany: (data: { ats: string; token: string; name: string }) =>
+      request<AtsCompany & { openJobs: number }>("/discovery/companies", { method: "POST", body: JSON.stringify(data) }),
+    setCompanyActive: (ats: string, token: string, active: boolean) =>
+      request<AtsCompany>(`/discovery/companies/${ats}/${encodeURIComponent(token)}`, {
+        method: "PATCH",
+        body: JSON.stringify({ active }),
+      }),
+  },
 
   // Presigned PUT keeps the file off API Gateway's payload path.
   uploadResume: async (file: File): Promise<Profile> => {

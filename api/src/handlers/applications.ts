@@ -42,6 +42,7 @@ import {
   verifyToken,
   type Account,
 } from "../lib/auth";
+import { discoveryRoute, jobForPromotion, markPromoted } from "../discovery/routes";
 
 const sqs = new SQSClient({});
 const s3 = new S3Client({});
@@ -606,6 +607,35 @@ export async function handler(
         );
         return json(202, { started: true });
       }
+      if (event.routeKey === "POST /discovery/jobs/{key}/promote") {
+        // A Discovered Job becomes an Application in "wishlist", through the
+        // same creation path as a pasted URL, with the full description.
+        const found = await jobForPromotion(event.pathParameters?.key ?? "");
+        if (!found) return json(404, { error: "not found" });
+        if (found.job.triage === "promoted" && found.job.applicationId) {
+          return json(409, { error: "already promoted", applicationId: found.job.applicationId });
+        }
+        const created = await createApplication(pk, session.workspace, {
+          url: found.job.sources[0]?.url ?? "",
+          jdText: found.description || `${found.job.title} at ${found.job.company}`,
+          company: found.job.company,
+          role: found.job.title,
+          status: "wishlist",
+        });
+        if (typeof created === "object" && created.statusCode === 201) {
+          const application = JSON.parse(String(created.body)) as Application;
+          await markPromoted(found.job.jobKey, application.id);
+        }
+        return created;
+      }
+      const routed = await discoveryRoute(
+        event.routeKey,
+        event.pathParameters ?? {},
+        event.queryStringParameters ?? {},
+        body,
+        pk
+      );
+      return routed ? json(routed.status, routed.body) : json(404, { error: `unknown route: ${event.routeKey}` });
     }
 
     switch (event.routeKey) {

@@ -1,5 +1,5 @@
 import type { Session } from "./api";
-import { ROUTES, type Route } from "./useRoute";
+import { DISCOVERY_ROUTE, ROUTES, type Route } from "./useRoute";
 
 const LABELS: Record<string, string> = {
   home: "dashboard",
@@ -36,6 +36,15 @@ export function Header({
             {LABELS[r]}
           </a>
         ))}
+        {session.isMaster && (
+          <a
+            href={`#/${DISCOVERY_ROUTE}`}
+            className={`nav-link${route === DISCOVERY_ROUTE ? " active" : ""}`}
+            aria-current={route === DISCOVERY_ROUTE ? "page" : undefined}
+          >
+            {"//discovery"}
+          </a>
+        )}
       </nav>
 
       <div className="header-meta">

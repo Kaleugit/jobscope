@@ -922,6 +922,143 @@ textarea {
   margin-top: 14px;
 }
 
+/* ── discovery (owner area) ─────────────────────────────────────────── */
+
+.disc-window {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  margin-top: 16px;
+}
+.disc-counts {
+  margin: 0;
+}
+
+.disc-filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.disc-filters .field span {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.disc-row {
+  justify-content: flex-start;
+}
+.disc-row .app-main {
+  flex: 1;
+}
+
+.disc-score {
+  flex-shrink: 0;
+  width: 4ch;
+  text-align: right;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--muted);
+}
+.disc-score.high {
+  color: var(--text);
+}
+
+.disc-latam.confirmed {
+  color: var(--text);
+}
+
+.disc-reason {
+  white-space: pre-line;
+  max-width: 72ch;
+}
+.disc-evidence {
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
+  max-width: 72ch;
+  overflow-wrap: anywhere;
+}
+.disc-note {
+  font-size: 12px;
+  color: var(--danger);
+  max-width: 72ch;
+  overflow-wrap: anywhere;
+}
+
+.disc-actions {
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.ghost-btn.disc-promote:hover {
+  color: var(--text);
+}
+
+.disc-run .stats {
+  margin-bottom: 18px;
+}
+
+.disc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin: 8px 0 20px;
+}
+.disc-table th {
+  text-align: left;
+  font-weight: 400;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+  padding: 6px 8px 6px 0;
+}
+.disc-table td {
+  border-bottom: 1px solid var(--line-soft);
+  padding: 6px 8px 6px 0;
+  overflow-wrap: anywhere;
+}
+.disc-table tr.has-error td,
+.disc-table tr.inactive td {
+  color: var(--muted);
+}
+.disc-table tr.has-error td:nth-child(3) {
+  color: var(--danger);
+}
+
+.disc-history {
+  font-size: 12px;
+}
+
+.disc-inline-note {
+  margin: 0;
+}
+
+.disc-add {
+  margin-top: 12px;
+}
+
+textarea {
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+@media (max-width: 640px) {
+  .disc-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+  .disc-row {
+    flex-wrap: wrap;
+  }
+  .disc-actions {
+    flex-direction: row;
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
 /* ── footer ─────────────────────────────────────────────────────────── */
 
 .site-footer {
