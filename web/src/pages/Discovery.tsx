@@ -84,7 +84,7 @@ export function Discovery({ onPromoted }: { onPromoted: () => void }) {
     <>
       <section className="block">
         <h2 className="block-label">{"//discovery"}</h2>
-        <div className="toggle" role="tablist" aria-label="Discovery sections">
+        <div className="toggle disc-tabs" role="tablist" aria-label="Discovery sections">
           {TABS.map((t) => (
             <button
               key={t}
@@ -614,13 +614,7 @@ function SettingsTab() {
             <div className="field">
               <label htmlFor="alertEmail">alert e-mail</label>
               <input id="alertEmail" name="alertEmail" type="email" defaultValue={settings.alertEmail ?? ""} autoComplete="email" />
-              <span className="block-note disc-inline-note">
-                {settings.alertEmail
-                  ? settings.alertEmailStatus === "verified"
-                    ? "verified"
-                    : `waiting for the aws confirmation link${settings.verifiedAlertEmail ? `; alerts still go to ${settings.verifiedAlertEmail}` : ""}`
-                  : "no alerts"}
-              </span>
+
             </div>
             <div className="field">
               <label htmlFor="alertThreshold">alert from score</label>
@@ -631,6 +625,14 @@ function SettingsTab() {
               <input id="ownerYears" name="ownerYears" type="number" min={0} max={40} defaultValue={settings.ownerYears} />
             </div>
           </div>
+          <p className="block-note disc-inline-note">
+            {"alert e-mail: "}
+            {settings.alertEmail
+              ? settings.alertEmailStatus === "verified"
+                ? "verified"
+                : `waiting for the aws confirmation link${settings.verifiedAlertEmail ? `; alerts still go to ${settings.verifiedAlertEmail}` : ""}`
+              : "none, no alerts"}
+          </p>
           <div className="field">
             <label htmlFor="adherenceProfile">adherence profile (sent to the llm to score jobs; no contact data)</label>
             <textarea id="adherenceProfile" name="adherenceProfile" rows={16} defaultValue={settings.adherenceProfile} />

@@ -996,6 +996,9 @@ textarea {
   color: var(--text);
 }
 
+.disc-run {
+  margin-top: 24px;
+}
 .disc-run .stats {
   margin-bottom: 18px;
 }
@@ -1046,6 +1049,20 @@ textarea {
 }
 
 @media (max-width: 640px) {
+  /* Four nav links and five tabs do not fit a phone: let them wrap. */
+  .site-nav {
+    flex-wrap: wrap;
+    gap: 4px 18px;
+  }
+  .disc-tabs,
+  .disc-window .toggle {
+    flex-wrap: wrap;
+    max-width: 100%;
+  }
+  .disc-tabs .toggle-option,
+  .disc-window .toggle-option {
+    padding: 8px 14px;
+  }
   .disc-filters {
     grid-template-columns: 1fr 1fr;
   }
