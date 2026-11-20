@@ -41,6 +41,34 @@ Nada disso foi investigado ainda. Pontos de partida:
    - permissão `deny` de escrita em `base/**`, porque o perfil-mestre nunca é editado;
    - sempre um currículo novo, com a nomenclatura do LATAM CV Maker.
 
+## Fontes candidatas (lista do dono, 2026-11-20, ainda não estudadas)
+
+O dono mandou estes sites para estudar e, depois, decidir se entram na busca. Nada foi pesquisado ainda. A descrição de cada um é a que veio com a lista, não foi verificada.
+
+| # | Site | Como foi descrito | Situação hoje |
+|---|---|---|---|
+| 1 | Remotar, remotar.com.br | plataforma brasileira só de vagas 100% remotas, com salário declarado | não usado |
+| 2 | Wellfound, wellfound.com | vagas em startups, com salário, equity e benefícios visíveis | não usado |
+| 3 | Himalayas, himalayas.app | vagas remotas com faixa salarial em USD ou EUR, verificadas | **já é fonte** (maior volume e suspeita de slop) |
+| 4 | Remote OK, remoteok.com | filtro por salário mínimo e benefícios | **já é fonte** |
+| 5 | We Work Remotely, weworkremotely.com | grande plataforma de vagas remotas com remuneração | **removido** em `8d9399f` (apply travado por premium, anti-robô) |
+| 6 | Jobgether, jobgether.com | anúncio completo: salário, modelo, localização, benefícios | não usado |
+| 7 | 4 Day Week, 4dayweek.io | semana de 4 dias com 100% do salário, empresas verificadas | não usado |
+| 8 | Flexa Careers, flexa.careers | empresas com flexibilidade auditada | não usado |
+| 9 | EuropeRemotely, europeremotely.com | vagas europeias, salário em EUR no título | não usado (o foco é quem pode contratar no Brasil) |
+| 10 | Otta, otta.com | empresas em crescimento, benefícios declarados | não usado (hoje parte do Welcome to the Jungle, a confirmar) |
+| 11 | Cord, cord.co | vagas de tecnologia com salário obrigatório e contato direto com o time | não usado |
+| 12 | Just Remote, justremote.co | só vagas 100% remotas | não usado |
+
+**O que estudar em cada um antes de implementar:**
+- Tem API pública, RSS ou feed? Exige chave ou conta?
+- Os termos permitem uso automatizado? Há proteção anti-robô (como a Cloudflare do WWR)? Não contornar nenhuma.
+- O botão de aplicar leva direto ao ATS da empresa, ou passa por cadastro ou assinatura paga? Esse é o filtro que derrubou o WWR.
+- Diz se a vaga aceita Brasil/LATAM, em campo estruturado?
+- O quanto repete vagas de outras fontes, e o quanto é revenda de vaga ("slop", ver acima).
+
+Ordem sugerida: primeiro as que podem trazer vaga direta e com campo de país (Remotar, Wellfound, Jobgether, 4 Day Week); por último as de foco europeu.
+
 ## Como operar
 
 - **Rodar uma coleta agora:** botão "run now" na aba runs, ou `aws lambda invoke --function-name JobscopeStack-DiscoveryFnEFFCFFEF-MvuKpvcsrEjK --payload '{"trigger":"manual"}' --cli-binary-format raw-in-base64-out out.json` (us-east-1).
