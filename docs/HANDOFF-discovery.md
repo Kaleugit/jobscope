@@ -8,7 +8,7 @@ Painel privado em `#/discovery`, visível só para a conta master. Coleta vagas 
 
 ## Em produção (último deploy: `8d9399f`, CI verde)
 
-- **Coleta agendada** às 07:00 e 13:00, America/Sao_Paulo (EventBridge Scheduler → `DiscoveryFn`, 15 min de teto, trava no DynamoDB em `DISC#LOCK`).
+- **Coleta agendada** às 07:00 e 13:00, de segunda a sexta, America/Sao_Paulo (EventBridge Scheduler → `DiscoveryFn`, 15 min de teto, trava no DynamoDB em `DISC#LOCK`).
 - **Fontes:** Himalayas (`/jobs/api/search?country=Brazil`, chave em `HIMALAYAS_API_KEY`), Remotive, Remote OK e os ATS da tabela de empresas (Greenhouse, Lever, Ashby). O **We Work Remotely saiu** em `8d9399f`: ver "Decisões pendentes".
 - **Pipeline** (`api/src/handlers/discovery.ts`): coleta → upsert/dedup (`store.ts`, `merge.ts`) → regras (`rules.ts`, vocabulário em `rules-config.ts`) → Gemini em lotes de 8 (`score.ts`, `judge.ts`, `gemini.ts`) → alerta SES (`alerts.ts`).
 - **Gemini:** modelo próprio `gemini-3.5-flash-lite`, `thinkingLevel: low`, até 15 chamadas por coleta. A demo usa `gemini-3.6-flash` (20 req/dia no gratuito, por projeto): **nunca calibrar com o modelo da demo**.

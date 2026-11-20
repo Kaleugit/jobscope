@@ -144,10 +144,16 @@ export class JobscopeStack extends Stack {
     );
 
     // 07:00 so the night's jobs are ready on waking; 13:00 for what US
-    // companies post in their morning. Brazil time, DST-proof.
+    // companies post in their morning. Weekdays only: the owner applies Monday
+    // to Friday, and Monday 07:00 picks up the weekend. Brazil time, DST-proof.
     for (const [id, hour] of [["DiscoveryMorning", "7"], ["DiscoveryAfternoon", "13"]] as const) {
       new Schedule(this, id, {
-        schedule: ScheduleExpression.cron({ minute: "0", hour, timeZone: TimeZone.AMERICA_SAO_PAULO }),
+        schedule: ScheduleExpression.cron({
+          minute: "0",
+          hour,
+          weekDay: "MON-FRI",
+          timeZone: TimeZone.AMERICA_SAO_PAULO,
+        }),
         target: new LambdaInvoke(discoveryFn, {
           input: ScheduleTargetInput.fromObject({ trigger: "schedule" }),
           retryAttempts: 0,
