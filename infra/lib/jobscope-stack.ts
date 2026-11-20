@@ -51,6 +51,9 @@ export class JobscopeStack extends Stack {
       sortKey: { name: "sk", type: AttributeType.STRING },
       billingMode: BillingMode.PAY_PER_REQUEST,
       removalPolicy: RemovalPolicy.DESTROY, // portfolio project: allow clean teardown
+      // Discovery retention: items with "ttl" (epoch seconds) are deleted by
+      // DynamoDB for free. App items never set it, so nothing else expires.
+      timeToLiveAttribute: "ttl",
     });
 
     // Discovery panel lists jobs by age: gsi1pk = DISC#JOBS, gsi1sk = <publishedAt>#<jobKey>.
@@ -216,7 +219,7 @@ export class JobscopeStack extends Stack {
       ["/discovery/run", HttpMethod.POST],
       ["/discovery/jobs", HttpMethod.GET],
       ["/discovery/jobs/{key}", HttpMethod.GET],
-      ["/discovery/jobs/{key}", HttpMethod.PATCH],
+      ["/discovery/jobs/{key}", HttpMethod.DELETE],
       ["/discovery/jobs/{key}/promote", HttpMethod.POST],
       ["/discovery/runs", HttpMethod.GET],
       ["/discovery/settings", HttpMethod.GET],

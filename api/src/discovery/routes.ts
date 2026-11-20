@@ -10,19 +10,16 @@ import {
   DISC_COMPANY_PK,
   DISC_JOB_PK,
   DISC_JOBDESC_PK,
-  DISC_JOBS_GSI1PK,
   DISC_RUN_PK,
-  GSI1_NAME,
   type AtsKind,
   type Company,
   type DiscoveredJob,
   type DiscoverySettings,
   type JobDescription,
   type Run,
-  type Triage,
 } from "./model";
 import { getSettings } from "./score";
-import { dynamoStore } from "./store";
+import { discardJob, dynamoStore } from "./store";
 
 export interface RouteResult {
   status: number;
@@ -48,37 +45,16 @@ export function windowStart(window: JobWindow, now = new Date()): Date {
   return new Date(`${day}T00:00:00${offset}`);
 }
 
-/** Jobs published inside the window, newest first, via the age index. */
-async function jobsSince(since: Date): Promise<DiscoveredJob[]> {
-  const items: DiscoveredJob[] = [];
-  let start: Record<string, unknown> | undefined;
-  do {
-    const result = await ddb.send(
-      new QueryCommand({
-        TableName: TABLE_NAME,
-        IndexName: GSI1_NAME,
-        KeyConditionExpression: "gsi1pk = :pk AND gsi1sk >= :since",
-        ExpressionAttributeValues: { ":pk": DISC_JOBS_GSI1PK, ":since": since.toISOString() },
-        ScanIndexForward: false,
-        ExclusiveStartKey: start,
-      })
-    );
-    items.push(...((result.Items ?? []) as DiscoveredJob[]));
-    start = result.LastEvaluatedKey;
-  } while (start);
-  return items;
-}
-
 /** What the panel needs of a job; internal keys stay on the server. */
 function summary(job: DiscoveredJob, applicationStatus?: string) {
   const { pk: _pk, sk: _sk, gsi1pk: _g1, gsi1sk: _g2, descriptionHash: _h, descriptionSource: _d, ...rest } = job;
   return { ...rest, applicationStatus };
 }
 
-type View = "main" | "review" | "discarded";
+type View = "main" | "review" | "pending";
 
-export function viewOf(job: DiscoveredJob): View | "pending" {
-  if (job.discardReason) return "discarded";
+/** Discarded jobs never reach here: they are deleted when discarded. */
+export function viewOf(job: DiscoveredJob): View {
   if (job.llmStatus === "review") return "review";
   if (job.llmStatus === "pending") return "pending";
   return "main";
@@ -99,15 +75,13 @@ async function applicationStatuses(workspacePk: string): Promise<Map<string, str
 
 async function listJobs(params: Record<string, string | undefined>, workspacePk: string): Promise<RouteResult> {
   const window = (WINDOWS as readonly string[]).includes(params.window ?? "") ? (params.window as JobWindow) : "today";
-  const jobs = await jobsSince(windowStart(window));
+  const jobs = await dynamoStore.recentJobs(windowStart(window));
   const statuses = await applicationStatuses(workspacePk);
-  const counts = { main: 0, pending: 0, review: 0, discarded: 0 };
-  const out = jobs
-    .filter((job) => !job.expired)
-    .map((job) => {
-      counts[viewOf(job)]++;
-      return summary(job, job.applicationId ? statuses.get(job.applicationId) : undefined);
-    });
+  const counts = { main: 0, pending: 0, review: 0 };
+  const out = jobs.map((job) => {
+    counts[viewOf(job)]++;
+    return summary(job, job.applicationId ? statuses.get(job.applicationId) : undefined);
+  });
   return ok({ window, since: windowStart(window).toISOString(), counts, jobs: out });
 }
 
@@ -118,19 +92,13 @@ async function getJob(key: string): Promise<RouteResult> {
   return ok({ ...summary(job), description: description?.description ?? "" });
 }
 
-async function setTriage(key: string, body: Record<string, unknown>): Promise<RouteResult> {
-  const triage = body.triage;
-  if (triage !== "new" && triage !== "ignored") return bad('triage must be "new" or "ignored"');
+/** The owner discards a job: same as any discard, deleted now with a Fingerprint. */
+async function discardByOwner(key: string): Promise<RouteResult> {
   const job = await dynamoStore.get<DiscoveredJob>(DISC_JOB_PK, key);
   if (!job) return bad("not found", 404);
   if (job.triage === "promoted") return bad("this job is already an application");
-  const next: DiscoveredJob = {
-    ...job,
-    triage: triage as Triage,
-    triageHistory: [...job.triageHistory, { triage: triage as Triage, at: new Date().toISOString() }],
-  };
-  await dynamoStore.put(next);
-  return ok(summary(next));
+  await discardJob(dynamoStore, key);
+  return ok({ discarded: true });
 }
 
 /** Called by the applications handler, which owns application creation. */
@@ -143,7 +111,14 @@ export async function markPromoted(key: string, applicationId: string): Promise<
     applicationId,
     triageHistory: [...job.triageHistory, { triage: "promoted", at: new Date().toISOString() }],
   };
+  // Promoted jobs are kept forever: drop the 30-day expiry from job and text.
+  delete next.ttl;
   await dynamoStore.put(next);
+  const description = await dynamoStore.get<JobDescription>(DISC_JOBDESC_PK, key);
+  if (description) {
+    delete description.ttl;
+    await dynamoStore.put(description);
+  }
   return next;
 }
 
@@ -184,6 +159,11 @@ async function writeSettings(body: Record<string, unknown>): Promise<RouteResult
     const n = Number(body.alertThreshold);
     if (!Number.isInteger(n) || n < 0 || n > 100) return bad("alertThreshold must be an integer from 0 to 100");
     next.alertThreshold = n;
+  }
+  if (body.minScore !== undefined) {
+    const n = Number(body.minScore);
+    if (!Number.isInteger(n) || n < 0 || n > 100) return bad("minScore must be an integer from 0 to 100");
+    next.minScore = n;
   }
   if (body.ownerYears !== undefined) {
     const n = Number(body.ownerYears);
@@ -255,8 +235,8 @@ export async function discoveryRoute(
       return listJobs(query, workspacePk);
     case "GET /discovery/jobs/{key}":
       return getJob(path.key ?? "");
-    case "PATCH /discovery/jobs/{key}":
-      return setTriage(path.key ?? "", body);
+    case "DELETE /discovery/jobs/{key}":
+      return discardByOwner(path.key ?? "");
     case "GET /discovery/runs":
       return listRuns();
     case "GET /discovery/settings":

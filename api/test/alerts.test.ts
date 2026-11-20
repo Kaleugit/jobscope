@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { alertable, renderAlert } from "../src/discovery/alerts";
 import type { DiscoveredJob } from "../src/discovery/model";
-import { expireStale } from "../src/handlers/discovery";
-import type { KeyValueStore } from "../src/discovery/store";
 
 const now = new Date("2026-11-21T10:00:00.000Z");
 
@@ -37,7 +35,7 @@ describe("alertable", () => {
     ["discarded", { discardReason: "x" }],
     ["not scored yet", { llmStatus: "pending" }],
     ["sent to review", { llmStatus: "review" }],
-    ["ignored by the owner", { triage: "ignored" }],
+    ["already promoted by the owner", { triage: "promoted" }],
     ["older than 48h", { publishedAt: "2026-11-18T09:00:00.000Z" }],
   ] as const)("not when %s", (_label, over) => {
     expect(alertable(job(over as Partial<DiscoveredJob>), 80, now)).toBe(false);
@@ -51,29 +49,5 @@ describe("renderAlert", () => {
     expect(html.indexOf("A &lt;script&gt;")).toBeLessThan(html.indexOf(">B<"));
     expect(html).not.toContain("<script>");
     expect(text).toContain("https://example.com/job");
-  });
-});
-
-describe("expireStale", () => {
-  it("expires jobs unseen for 30 days, never promoted ones", async () => {
-    const items = new Map<string, any>([
-      ["DISC#JOB|old", job({ sk: "old", jobKey: "old", lastSeenAt: "2026-10-01T00:00:00.000Z" })],
-      ["DISC#JOB|kept", job({ sk: "kept", jobKey: "kept", lastSeenAt: "2026-10-01T00:00:00.000Z", triage: "promoted" })],
-      ["DISC#JOB|fresh", job({ sk: "fresh", jobKey: "fresh" })],
-    ]);
-    const store: KeyValueStore = {
-      async get<T>(pk: string, sk: string) {
-        return items.get(`${pk}|${sk}`) as T | undefined;
-      },
-      async put(item) {
-        items.set(`${item.pk}|${item.sk}`, item);
-      },
-      async query<T>(pk: string) {
-        return [...items.values()].filter((i) => i.pk === pk) as T[];
-      },
-    };
-    expect(await expireStale(store, now)).toBe(1);
-    expect(items.get("DISC#JOB|old").expired).toBe(true);
-    expect(items.get("DISC#JOB|kept").expired).toBeUndefined();
   });
 });

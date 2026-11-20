@@ -9,7 +9,6 @@ import {
   SESv2Client,
 } from "@aws-sdk/client-sesv2";
 import {
-  DISC_JOB_PK,
   type DiscoveredJob,
   type DiscoverySettings,
 } from "./model";
@@ -23,7 +22,6 @@ export function alertable(job: DiscoveredJob, threshold: number, now: Date): boo
   return (
     job.llmStatus === "done" &&
     !job.discardReason &&
-    !job.expired &&
     job.latam?.bucket === "confirmed" &&
     !job.localMarket &&
     (job.score ?? 0) >= threshold &&
@@ -109,7 +107,8 @@ export async function sendAlerts(
   now = new Date(),
   panelUrl = process.env.PANEL_URL
 ): Promise<AlertResult> {
-  const jobs = (await store.query<DiscoveredJob>(DISC_JOB_PK)).filter((j) => alertable(j, settings.alertThreshold, now));
+  const since = new Date(now.getTime() - ALERT_MAX_AGE_MS);
+  const jobs = (await store.recentJobs(since)).filter((j) => alertable(j, settings.alertThreshold, now));
   if (jobs.length === 0) return { sent: 0, skipped: "nenhuma vaga acima do limite" };
 
   const recipient = await ensureVerifiedRecipient(store, settings);

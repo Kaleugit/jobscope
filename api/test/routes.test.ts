@@ -22,6 +22,5 @@ describe("viewOf", () => {
     expect(viewOf(job({}))).toBe("main");
     expect(viewOf(job({ llmStatus: "review" }))).toBe("review");
     expect(viewOf(job({ llmStatus: "pending" }))).toBe("pending");
-    expect(viewOf(job({ discardReason: "x", llmStatus: "not_needed" }))).toBe("discarded");
   });
 });

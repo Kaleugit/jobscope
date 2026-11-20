@@ -93,7 +93,7 @@ export interface GeneratedDocs {
 // ── Discovery (Owner Area, master account only) ─────────────────────────
 
 export type LatamBucket = "confirmed" | "likely" | "discarded";
-export type Triage = "new" | "ignored" | "promoted";
+export type Triage = "new" | "promoted";
 export type LlmStatus = "not_needed" | "pending" | "done" | "review";
 export type JobWindow = "today" | "24h" | "48h" | "7d";
 
@@ -129,7 +129,7 @@ export interface DiscoveredJob {
 export interface JobsPage {
   window: JobWindow;
   since: string;
-  counts: { main: number; pending: number; review: number; discarded: number };
+  counts: { main: number; pending: number; review: number };
   jobs: DiscoveredJob[];
 }
 
@@ -148,11 +148,11 @@ export interface DiscoveryRun {
     scored: number;
     review: number;
     discardedByLlm: number;
+    belowMinimum?: number;
     pending: number;
     llmStoppedBy?: "cap" | "quota";
     llmErrors?: string[];
     alertSkipped?: string;
-    expired: number;
   };
 }
 
@@ -161,6 +161,7 @@ export interface DiscoverySettings {
   alertEmailStatus?: "pending" | "verified";
   verifiedAlertEmail?: string;
   alertThreshold: number;
+  minScore: number;
   ownerYears: number;
   adherenceProfile: string;
   updatedAt: string;
@@ -300,8 +301,7 @@ export const api = {
   discovery: {
     jobs: (window: JobWindow) => request<JobsPage>(`/discovery/jobs?window=${window}`),
     job: (key: string) => request<DiscoveredJob & { description: string }>(`/discovery/jobs/${key}`),
-    triage: (key: string, triage: "new" | "ignored") =>
-      request<DiscoveredJob>(`/discovery/jobs/${key}`, { method: "PATCH", body: JSON.stringify({ triage }) }),
+    discard: (key: string) => request<{ discarded: boolean }>(`/discovery/jobs/${key}`, { method: "DELETE" }),
     promote: (key: string) => request<Application>(`/discovery/jobs/${key}/promote`, { method: "POST" }),
     run: () => request<{ started: boolean }>("/discovery/run", { method: "POST" }),
     runs: () => request<DiscoveryRun[]>("/discovery/runs"),

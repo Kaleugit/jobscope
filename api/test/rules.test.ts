@@ -11,7 +11,7 @@ import {
   judgeLatam,
   requiredYears,
 } from "../src/discovery/rules";
-import type { KeyValueStore } from "../src/discovery/store";
+import { memoryStore } from "../src/discovery/memory-store";
 
 const job = (over: Partial<DiscoveredJob> = {}) => ({
   title: "Software Engineer",
@@ -259,18 +259,7 @@ describe("whole outcome", () => {
 
 describe("evaluatePending", () => {
   it("persists outcomes and counts companies once", async () => {
-    const items = new Map<string, any>();
-    const store: KeyValueStore = {
-      async get<T>(pk: string, sk: string) {
-        return items.get(`${pk}|${sk}`) as T | undefined;
-      },
-      async put(item) {
-        items.set(`${item.pk}|${item.sk}`, structuredClone(item));
-      },
-      async query<T>() {
-        return [] as T[];
-      },
-    };
+    const { store, items } = memoryStore();
     const company: Company = {
       pk: "DISC#COMPANY", sk: "greenhouse#coderoad", ats: "greenhouse", token: "coderoad", name: "Coderoad",
       active: true, totalJobsSeen: 0, latamJobsSeen: 0, createdAt: "", updatedAt: "",
@@ -286,11 +275,11 @@ describe("evaluatePending", () => {
 
     const first = await evaluatePending(store, [base], 3);
     expect(first.toLlm).toBe(1);
-    expect(items.get("DISC#COMPANY|greenhouse#coderoad").latamJobsSeen).toBe(1);
+    expect(items.get("DISC#COMPANY|greenhouse#coderoad")?.latamJobsSeen).toBe(1);
 
     // Re-judging a changed description does not count the job twice.
     await evaluatePending(store, [{ ...first.jobs[0], needsEvaluation: true }], 3);
-    expect(items.get("DISC#COMPANY|greenhouse#coderoad").totalJobsSeen).toBe(1);
+    expect(items.get("DISC#COMPANY|greenhouse#coderoad")?.totalJobsSeen).toBe(1);
   });
 
   it("clears an old score when the job is now discarded", () => {
@@ -298,5 +287,24 @@ describe("evaluatePending", () => {
     const next = applyRuleOutcome(scored, evaluateRules(job({ title: "Senior Engineer" }), "", 3));
     expect(next.score).toBeUndefined();
     expect(next.llmStatus).toBe("not_needed");
+  });
+
+  it("deletes a discarded job at once and leaves only its fingerprint", async () => {
+    const { store, get } = memoryStore();
+    const job = {
+      pk: "DISC#JOB", sk: "k9", jobKey: "k9", gsi1pk: "DISC#JOBS", gsi1sk: "x", company: "Acme",
+      title: "Senior Engineer", locationRaw: "", tags: [], publishedAt: "2026-11-20T00:00:00.000Z",
+      firstSeenAt: "", lastSeenAt: "", sources: [], hints: [], descriptionSource: "", descriptionHash: "",
+      needsEvaluation: true, llmStatus: "pending", triage: "new", triageHistory: [],
+    } as unknown as DiscoveredJob;
+    await store.put(job);
+    await store.put({ pk: "DISC#JOBDESC", sk: "k9", description: "x" });
+    const result = await evaluatePending(store, [job], 3);
+    expect(result.discarded).toBe(1);
+    expect(get("DISC#JOB", "k9")).toBeUndefined();
+    expect(get("DISC#JOBDESC", "k9")).toBeUndefined();
+    const fingerprint = get("DISC#GONE", "k9");
+    expect(fingerprint).toBeDefined();
+    expect(Object.keys(fingerprint!).sort()).toEqual(["pk", "sk", "ttl"]);
   });
 });

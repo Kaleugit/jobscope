@@ -11,20 +11,9 @@ import { remoteOk } from "../src/discovery/sources/remoteok";
 import { weWorkRemotely } from "../src/discovery/sources/weworkremotely";
 import { atsSource } from "../src/discovery/sources/ats";
 import { DISC_JOB_PK, type DiscoveredJob, type Run } from "../src/discovery/model";
-import type { KeyValueStore } from "../src/discovery/store";
+import { memoryStore } from "../src/discovery/memory-store";
 
-const items = new Map<string, Record<string, unknown>>();
-const store: KeyValueStore = {
-  async get<T>(pk: string, sk: string) {
-    return items.get(`${pk}|${sk}`) as T | undefined;
-  },
-  async put(item) {
-    items.set(`${item.pk}|${item.sk}`, item as Record<string, unknown>);
-  },
-  async query<T>(pk: string) {
-    return [...items.values()].filter((i) => i.pk === pk) as T[];
-  },
-};
+const { store, items } = memoryStore();
 
 async function main() {
   const sources = [

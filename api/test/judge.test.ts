@@ -9,7 +9,7 @@ import {
 } from "../src/discovery/judge";
 import type { DiscoveredJob } from "../src/discovery/model";
 import { scorePending } from "../src/discovery/score";
-import type { KeyValueStore } from "../src/discovery/store";
+import { memoryStore } from "../src/discovery/memory-store";
 
 const description =
   "We are a small team building AI tools. This role is open to candidates in Latin America.\n" +
@@ -248,24 +248,14 @@ describe("quota handling", () => {
 });
 
 describe("scorePending", () => {
+  const NOW = new Date("2026-11-20T23:00:00.000Z");
+
   function memory(jobs: DiscoveredJob[]) {
-    const items = new Map<string, any>();
-    for (const job of jobs) {
-      items.set(`DISC#JOB|${job.jobKey}`, job);
-      items.set(`DISC#JOBDESC|${job.jobKey}`, { pk: "DISC#JOBDESC", sk: job.jobKey, description });
-    }
-    const store: KeyValueStore = {
-      async get<T>(pk: string, sk: string) {
-        return items.get(`${pk}|${sk}`) as T | undefined;
-      },
-      async put(item) {
-        items.set(`${item.pk}|${item.sk}`, structuredClone(item));
-      },
-      async query<T>(pk: string) {
-        return [...items.values()].filter((i) => i.pk === pk) as T[];
-      },
-    };
-    return { store, job: (key: string) => items.get(`DISC#JOB|${key}`) as DiscoveredJob };
+    const m = memoryStore([
+      ...jobs,
+      ...jobs.map((j) => ({ pk: "DISC#JOBDESC", sk: j.jobKey, description })),
+    ]);
+    return { ...m, job: (key: string) => m.get("DISC#JOB", key) as unknown as DiscoveredJob };
   }
 
   const jobs = Array.from({ length: 10 }, (_, i) =>
@@ -280,7 +270,7 @@ describe("scorePending", () => {
       const ids = [...prompt.matchAll(/### Posting (p\d+)/g)].map((m) => m[1]);
       return JSON.stringify({ results: ids.map((id) => ({ id, ...answer() })) });
     };
-    const stats = await scorePending(db.store, generate, { intervalMs: 0, maxCalls: 10 });
+    const stats = await scorePending(db.store, generate, { intervalMs: 0, maxCalls: 10 }, { now: NOW });
     expect(calls).toBe(2);
     expect(stats.scored).toBe(10);
     expect(stats.pending).toBe(0);
@@ -292,7 +282,7 @@ describe("scorePending", () => {
       const ids = [...prompt.matchAll(/### Posting (p\d+)/g)].map((m) => m[1]);
       return JSON.stringify({ results: ids.map((id) => ({ id, ...answer() })) });
     };
-    const stats = await scorePending(db.store, generate, { intervalMs: 0, maxCalls: 1 });
+    const stats = await scorePending(db.store, generate, { intervalMs: 0, maxCalls: 1 }, { now: NOW });
     expect(stats.scored).toBe(8);
     expect(stats.pending).toBe(2);
     // k9 and k8 are the newest; the two oldest wait.
@@ -303,9 +293,9 @@ describe("scorePending", () => {
   it("a missing entry retries next run, then goes to review", async () => {
     const db = memory([jobs[0]]);
     const empty = async () => JSON.stringify({ results: [] });
-    await scorePending(db.store, empty, { intervalMs: 0, maxCalls: 5 });
+    await scorePending(db.store, empty, { intervalMs: 0, maxCalls: 5 }, { now: NOW });
     expect(db.job("k0").llmStatus).toBe("pending");
-    await scorePending(db.store, empty, { intervalMs: 0, maxCalls: 5 });
+    await scorePending(db.store, empty, { intervalMs: 0, maxCalls: 5 }, { now: NOW });
     expect(db.job("k0").llmStatus).toBe("review");
   });
 
@@ -315,5 +305,32 @@ describe("scorePending", () => {
     expect(stats.errors).toHaveLength(1);
     expect(db.job("k0").llmAttempts).toBeUndefined();
     expect(db.job("k0").llmStatus).toBe("pending");
+  });
+
+  it("discards below the Minimum Score: deleted, fingerprinted, not counted as scored", async () => {
+    const db = memory([jobs[0]]);
+    const generate = async () => JSON.stringify({ results: [{ id: "p1", ...answer({ score: 55 }) }] });
+    const stats = await scorePending(db.store, generate, { intervalMs: 0, maxCalls: 5 }, { now: NOW });
+    expect(stats.belowMinimum).toBe(1);
+    expect(stats.scored).toBe(0);
+    expect(db.get("DISC#JOB", "k0")).toBeUndefined();
+    expect(db.get("DISC#JOBDESC", "k0")).toBeUndefined();
+    expect(db.get("DISC#GONE", "k0")).toBeDefined();
+  });
+
+  it("discards what the LLM finds is not technical work", async () => {
+    const db = memory([jobs[0]]);
+    const generate = async () => JSON.stringify({ results: [{ id: "p1", ...answer({ is_tech_role: false }) }] });
+    const stats = await scorePending(db.store, generate, { intervalMs: 0, maxCalls: 5 }, { now: NOW });
+    expect(stats.discardedByLlm).toBe(1);
+    expect(db.get("DISC#JOB", "k0")).toBeUndefined();
+  });
+
+  it("only scores jobs the panel can still show (published in the last 7 days)", async () => {
+    const old = baseJob({ jobKey: "old", sk: "old", publishedAt: "2026-09-01T00:00:00.000Z" });
+    const db = memory([old]);
+    let calls = 0;
+    await scorePending(db.store, async () => { calls++; return "{}"; }, { intervalMs: 0, maxCalls: 5 }, { now: NOW });
+    expect(calls).toBe(0);
   });
 });

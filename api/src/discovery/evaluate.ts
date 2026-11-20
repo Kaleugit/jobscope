@@ -9,7 +9,7 @@ import {
   type JobDescription,
 } from "./model";
 import { evaluateRules, type RuleOutcome } from "./rules";
-import type { KeyValueStore } from "./store";
+import { discardJob, type KeyValueStore } from "./store";
 
 /** Writes a rule outcome onto the job. Pure: the caller persists. */
 export function applyRuleOutcome(job: DiscoveredJob, outcome: RuleOutcome): DiscoveredJob {
@@ -85,7 +85,10 @@ export async function evaluatePending(
       (await store.get<JobDescription>(DISC_JOBDESC_PK, job.jobKey))?.description ?? "";
     const firstJudgement = job.areaOk === undefined;
     const next = applyRuleOutcome(job, evaluateRules(job, description, ownerYears));
-    await store.put(next);
+    // Discarded is gone: deleted now, only a Fingerprint stays. A promoted job
+    // is an application already and is never deleted, whatever its new text says.
+    if (next.discardReason && next.triage !== "promoted") await discardJob(store, next.jobKey, now);
+    else await store.put(next);
     out.push(next);
 
     stats.evaluated++;

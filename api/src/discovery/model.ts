@@ -10,14 +10,34 @@
 //                                       panel's index stays small
 //   DISC#RUN     / <startedAt>          one collection run and its per-source log
 //   DISC#SETTINGS / SETTINGS            owner settings edited in the Owner Area
+//   DISC#GONE    / <jobKey>             Fingerprint of a discarded job: no content,
+//                                       only stops the next runs judging it again
 //
 // The panel lists jobs by age through GSI1: gsi1pk = DISC#JOBS, gsi1sk = <publishedAt>#<jobKey>.
+//
+// Retention (DynamoDB TTL on "ttl", epoch seconds, free deletion): discarded
+// jobs are deleted at once; undecided ones 30 days after publication; promoted
+// ones never. Postings expire 30 days after their source stops listing them,
+// fingerprints 30 days after the discard. The table stays the same size forever.
 
 export const DISC_COMPANY_PK = "DISC#COMPANY";
 export const DISC_POSTING_PK = "DISC#POSTING";
 export const DISC_JOB_PK = "DISC#JOB";
 export const DISC_JOBDESC_PK = "DISC#JOBDESC";
 export const DISC_RUN_PK = "DISC#RUN";
+export const DISC_GONE_PK = "DISC#GONE";
+
+export const RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+/** DynamoDB TTL value: epoch seconds. */
+export const ttlAt = (date: Date | string, plusMs = 0) =>
+  Math.floor((new Date(date).getTime() + plusMs) / 1000);
+
+/** A discarded job, reduced to its key. */
+export interface Fingerprint {
+  pk: typeof DISC_GONE_PK;
+  sk: string;
+  ttl: number;
+}
 export const DISC_SETTINGS_PK = "DISC#SETTINGS";
 export const DISC_SETTINGS_SK = "SETTINGS";
 
@@ -92,14 +112,17 @@ export interface Posting {
   descriptionHash: string;
   firstSeenAt: string;
   lastSeenAt: string;
+  /** 30 days after the source last listed it. */
+  ttl?: number;
 }
 
 export type LatamBucket = "confirmed" | "likely" | "discarded";
 export type DecidedBy = "rule" | "llm";
 export type ContractType = "contractor" | "eor" | "full_time_local" | "unknown";
 
-/** Owner triage of a Discovered Job. "promoted" means it became an Application. */
-export type Triage = "new" | "ignored" | "promoted";
+/** Owner triage of a Discovered Job. "promoted" means it became an Application
+ *  (wishlist); a job the owner discards is deleted, not marked. */
+export type Triage = "new" | "promoted";
 
 /** Where the LLM step stands for this job. "review" = its output failed validation. */
 export type LlmStatus = "not_needed" | "pending" | "done" | "review";
@@ -160,21 +183,24 @@ export interface DiscoveredJob {
   reviewReason?: string;
   /** Batches that came back without a usable entry for this job; at 2 it goes to review. */
   llmAttempts?: number;
-  /** Set when a filter removed the job, with the reason, for the audit tab. */
+  /** Set when a filter or the LLM removes the job. Never persisted: a job with
+   *  a discard reason is deleted and only its Fingerprint stays. */
   discardReason?: string;
 
   triage: Triage;
   triageHistory: { triage: Triage; at: string }[];
   applicationId?: string;
   alertedAt?: string;
-  /** Marked after 30 days absent from every source. */
-  expired?: boolean;
+  /** 30 days after publication; removed when the job is promoted. */
+  ttl?: number;
 }
 
 export interface JobDescription {
   pk: typeof DISC_JOBDESC_PK;
   sk: string;
   description: string;
+  /** Same as its job's. */
+  ttl?: number;
 }
 
 export interface SourceRunLog {
@@ -202,11 +228,11 @@ export interface Run {
     scored: number;
     review: number;
     discardedByLlm: number;
+    belowMinimum?: number;
     pending: number;
     llmStoppedBy?: "cap" | "quota";
     llmErrors?: string[];
     alertSkipped?: string;
-    expired: number;
   };
 }
 
@@ -218,6 +244,8 @@ export interface DiscoverySettings {
   alertEmailStatus?: "pending" | "verified";
   verifiedAlertEmail?: string;
   alertThreshold: number;
+  /** Minimum Work Nature score to show a job; below it the job is discarded. */
+  minScore: number;
   /** The owner's years of experience; a job asking for more is blocked by the Experience Barrier. */
   ownerYears: number;
   /** Adherence Profile text sent to the LLM. No contact data, no employer internals. */
@@ -227,6 +255,7 @@ export interface DiscoverySettings {
 
 export const DEFAULT_SETTINGS: Omit<DiscoverySettings, "pk" | "sk" | "updatedAt"> = {
   alertThreshold: 80,
+  minScore: 60,
   ownerYears: 3,
   adherenceProfile: "",
 };

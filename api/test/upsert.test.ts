@@ -1,30 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { TOUCH_INTERVAL_MS } from "../src/discovery/merge";
 import { DISC_JOB_PK, DISC_POSTING_PK, type DiscoveredJob, type NormalizedJob } from "../src/discovery/model";
-import { upsertPostings, type KeyValueStore } from "../src/discovery/store";
+import { memoryStore as sharedMemoryStore } from "../src/discovery/memory-store";
+import { discardJob, upsertPostings } from "../src/discovery/store";
 
 function memoryStore() {
-  const items = new Map<string, Record<string, unknown>>();
-  let writes = 0;
-  const store: KeyValueStore = {
-    async get<T>(pk: string, sk: string) {
-      const item = items.get(`${pk}|${sk}`);
-      return item ? (structuredClone(item) as T) : undefined;
-    },
-    async put(item) {
-      writes++;
-      items.set(`${item.pk}|${item.sk}`, structuredClone(item) as Record<string, unknown>);
-    },
-    async query<T>(pk: string) {
-      return [...items.values()].filter((i) => i.pk === pk) as T[];
-    },
-  };
+  const m = sharedMemoryStore();
   return {
-    store,
-    items,
-    writes: () => writes,
-    jobs: () => [...items.values()].filter((i) => i.pk === DISC_JOB_PK) as unknown as DiscoveredJob[],
-    postings: () => [...items.values()].filter((i) => i.pk === DISC_POSTING_PK),
+    ...m,
+    jobs: () => m.all(DISC_JOB_PK) as unknown as DiscoveredJob[],
+    postings: () => m.all(DISC_POSTING_PK),
   };
 }
 
@@ -125,5 +110,31 @@ describe("upsert", () => {
     const db = memoryStore();
     await upsertPostings(db.store, [{ ...base, publishedAt: undefined }], now);
     expect(db.jobs()[0].publishedAt).toBe(now.toISOString());
+  });
+
+  it("gives an undecided job a 30-day expiry from publication", async () => {
+    const db = memoryStore();
+    await upsertPostings(db.store, [base], now);
+    const expected = Math.floor(new Date(base.publishedAt!).getTime() / 1000) + 30 * 24 * 3600;
+    expect(db.jobs()[0].ttl).toBe(expected);
+  });
+
+  describe("fingerprints", () => {
+    it("a discarded job is never judged again, from any source", async () => {
+      const db = memoryStore();
+      const first = await upsertPostings(db.store, [base], now);
+      await discardJob(db.store, first.touchedJobs[0].jobKey, now);
+
+      // Same posting with new text, and the same job from another source.
+      const edited = { ...base, description: "Changed text." };
+      const elsewhere: NormalizedJob = { ...base, source: "remotive", externalId: "r-1", url: "https://remotive.com/x" };
+      const later = new Date(now.getTime() + 60_000);
+      const again = await upsertPostings(db.store, [edited, elsewhere], later);
+
+      expect(again.newJobs).toBe(0);
+      expect(again.touchedJobs).toHaveLength(0);
+      expect(again.fingerprinted).toBe(2);
+      expect(db.jobs()).toHaveLength(0);
+    });
   });
 });

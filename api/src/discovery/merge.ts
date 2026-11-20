@@ -4,6 +4,8 @@ import {
   DISC_POSTING_PK,
   jobGsi1Sk,
   postingSk,
+  RETENTION_MS,
+  ttlAt,
   type DiscoveredJob,
   type NormalizedJob,
   type Posting,
@@ -116,11 +118,12 @@ export function mergeIntoJob(
         llmStatus: "pending",
         triage: "new",
         triageHistory: [{ triage: "new", at: nowIso }],
+        ttl: ttlAt(publishedAt, RETENTION_MS),
       },
     };
   }
 
-  const job: DiscoveredJob = { ...existing, lastSeenAt: nowIso, expired: false };
+  const job: DiscoveredJob = { ...existing, lastSeenAt: nowIso };
 
   const index = job.sources.findIndex(
     (s) => s.source === ref.source && s.externalId === ref.externalId
@@ -132,6 +135,8 @@ export function mergeIntoJob(
   if (posting.publishedAt && posting.publishedAt < job.publishedAt) {
     job.publishedAt = posting.publishedAt;
     job.gsi1sk = jobGsi1Sk(job.publishedAt, job.jobKey);
+    // Undecided jobs live 30 days from publication; promoted ones forever.
+    if (job.triage !== "promoted") job.ttl = ttlAt(job.publishedAt, RETENTION_MS);
   }
   if (!job.salary && posting.salary) job.salary = posting.salary;
   job.tags = [...new Set([...job.tags, ...posting.tags])];

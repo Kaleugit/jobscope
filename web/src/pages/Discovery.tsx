@@ -13,8 +13,8 @@ import { Dots, SkeletonList } from "../common";
 // The Owner Area: remote international jobs open to Brazil, collected at 07:00
 // and 13:00, filtered by rules and scored by Work Nature. Master account only.
 
-type Tab = "jobs" | "review" | "discarded" | "runs" | "settings";
-const TABS: Tab[] = ["jobs", "review", "discarded", "runs", "settings"];
+type Tab = "jobs" | "review" | "runs" | "settings";
+const TABS: Tab[] = ["jobs", "review", "runs", "settings"];
 const WINDOWS: { id: JobWindow; label: string }[] = [
   { id: "today", label: "today" },
   { id: "24h", label: "24h" },
@@ -77,8 +77,11 @@ export function Discovery({ onPromoted }: { onPromoted: () => void }) {
       await api.discovery.promote(job.jobKey);
       onPromoted();
     });
-  const triage = (job: DiscoveredJob, next: "new" | "ignored") =>
-    act(job.jobKey, () => api.discovery.triage(job.jobKey, next));
+  // Discarded is gone: deleted for good, nothing to restore.
+  const discard = (job: DiscoveredJob) => {
+    if (!confirm(`Discard "${job.title}" at ${job.company}? It is deleted for good.`)) return;
+    void act(job.jobKey, () => api.discovery.discard(job.jobKey));
+  };
 
   return (
     <>
@@ -99,7 +102,7 @@ export function Discovery({ onPromoted }: { onPromoted: () => void }) {
             </button>
           ))}
         </div>
-        {(tab === "jobs" || tab === "review" || tab === "discarded") && (
+        {(tab === "jobs" || tab === "review") && (
           <div className="disc-window">
             <div className="toggle" role="group" aria-label="Published within">
               {WINDOWS.map((w) => (
@@ -116,8 +119,7 @@ export function Discovery({ onPromoted }: { onPromoted: () => void }) {
             </div>
             {page && (
               <span className="block-note disc-counts">
-                {page.counts.main} scored · {page.counts.pending} waiting for the llm · {page.counts.review} to review ·{" "}
-                {page.counts.discarded} discarded
+                {page.counts.main} scored · {page.counts.pending} waiting for the llm · {page.counts.review} to review
               </span>
             )}
           </div>
@@ -130,9 +132,8 @@ export function Discovery({ onPromoted }: { onPromoted: () => void }) {
         </div>
       )}
 
-      {tab === "jobs" && <JobsTab page={page} busy={busy} onPromote={promote} onTriage={triage} />}
-      {tab === "review" && <ReviewTab page={page} busy={busy} onPromote={promote} onTriage={triage} />}
-      {tab === "discarded" && <DiscardedTab page={page} />}
+      {tab === "jobs" && <JobsTab page={page} busy={busy} onPromote={promote} onDiscard={discard} />}
+      {tab === "review" && <ReviewTab page={page} busy={busy} onPromote={promote} onDiscard={discard} />}
       {tab === "runs" && <RunsTab onRan={load} />}
       {tab === "settings" && <SettingsTab />}
     </>
@@ -143,31 +144,31 @@ export function Discovery({ onPromoted }: { onPromoted: () => void }) {
 
 type Market = "all" | "international" | "local";
 type Bucket = "all" | "confirmed" | "likely";
-type TriageFilter = "open" | "new" | "promoted" | "ignored";
+type TriageFilter = "all" | "new" | "promoted";
 
 function JobsTab({
   page,
   busy,
   onPromote,
-  onTriage,
+  onDiscard,
 }: {
   page: JobsPage | null;
   busy: string | null;
   onPromote: (job: DiscoveredJob) => void;
-  onTriage: (job: DiscoveredJob, next: "new" | "ignored") => void;
+  onDiscard: (job: DiscoveredJob) => void;
 }) {
   const [bucket, setBucket] = useState<Bucket>("all");
   const [market, setMarket] = useState<Market>("all");
   const [source, setSource] = useState("all");
-  const [triage, setTriage] = useState<TriageFilter>("open");
+  const [triage, setTriage] = useState<TriageFilter>("all");
 
   const visible = useMemo(() => {
-    const jobs = (page?.jobs ?? []).filter((j) => !j.discardReason && j.llmStatus !== "review");
+    const jobs = (page?.jobs ?? []).filter((j) => j.llmStatus !== "review");
     return jobs
       .filter((j) => bucket === "all" || j.latam?.bucket === bucket)
       .filter((j) => market === "all" || (market === "local" ? j.localMarket : !j.localMarket))
       .filter((j) => source === "all" || j.sources.some((s) => sourceName(s.source) === source))
-      .filter((j) => (triage === "open" ? j.triage !== "ignored" : j.triage === triage))
+      .filter((j) => triage === "all" || j.triage === triage)
       .sort((a, b) => (b.score ?? -1) - (a.score ?? -1) || b.publishedAt.localeCompare(a.publishedAt));
   }, [page, bucket, market, source, triage]);
 
@@ -209,10 +210,9 @@ function JobsTab({
         <label className="field">
           <span>status</span>
           <select value={triage} onChange={(e) => setTriage(e.target.value as TriageFilter)}>
-            <option value="open">new + promoted</option>
-            <option value="new">new</option>
+            <option value="all">all</option>
+            <option value="new">not decided</option>
             <option value="promoted">promoted</option>
-            <option value="ignored">ignored</option>
           </select>
         </label>
       </div>
@@ -224,7 +224,7 @@ function JobsTab({
       {visible.length > 0 && (
         <ul className="apps">
           {visible.map((job) => (
-            <JobRow key={job.jobKey} job={job} busy={busy === job.jobKey} onPromote={onPromote} onTriage={onTriage} />
+            <JobRow key={job.jobKey} job={job} busy={busy === job.jobKey} onPromote={onPromote} onDiscard={onDiscard} />
           ))}
         </ul>
       )}
@@ -236,13 +236,13 @@ function JobRow({
   job,
   busy,
   onPromote,
-  onTriage,
+  onDiscard,
   note,
 }: {
   job: DiscoveredJob;
   busy: boolean;
   onPromote?: (job: DiscoveredJob) => void;
-  onTriage?: (job: DiscoveredJob, next: "new" | "ignored") => void;
+  onDiscard?: (job: DiscoveredJob) => void;
   note?: string;
 }) {
   const scored = typeof job.score === "number";
@@ -291,18 +291,18 @@ function JobRow({
           </a>
         )}
         {!busy && job.triage !== "promoted" && onPromote && (
-          <button type="button" className="ghost-btn disc-promote" onClick={() => onPromote(job)} title="Track as an application (wishlist)">
+          <button
+            type="button"
+            className="ghost-btn disc-promote"
+            onClick={() => onPromote(job)}
+            title="Becomes an application in wishlist (I want to apply). Mark it applied there once you do."
+          >
             [promote]
           </button>
         )}
-        {!busy && job.triage === "new" && onTriage && (
-          <button type="button" className="ghost-btn" onClick={() => onTriage(job, "ignored")}>
-            [ignore]
-          </button>
-        )}
-        {!busy && job.triage === "ignored" && onTriage && (
-          <button type="button" className="ghost-btn disc-promote" onClick={() => onTriage(job, "new")}>
-            [restore]
+        {!busy && job.triage === "new" && onDiscard && (
+          <button type="button" className="ghost-btn" onClick={() => onDiscard(job)} title="Deleted for good">
+            [discard]
           </button>
         )}
       </div>
@@ -316,14 +316,14 @@ function ReviewTab({
   page,
   busy,
   onPromote,
-  onTriage,
+  onDiscard,
 }: {
   page: JobsPage | null;
   busy: string | null;
   onPromote: (job: DiscoveredJob) => void;
-  onTriage: (job: DiscoveredJob, next: "new" | "ignored") => void;
+  onDiscard: (job: DiscoveredJob) => void;
 }) {
-  const jobs = (page?.jobs ?? []).filter((j) => j.llmStatus === "review" && !j.discardReason);
+  const jobs = (page?.jobs ?? []).filter((j) => j.llmStatus === "review");
   return (
     <section className="block">
       <p className="block-note">
@@ -334,71 +334,10 @@ function ReviewTab({
       {jobs.length > 0 && (
         <ul className="apps">
           {jobs.map((job) => (
-            <JobRow key={job.jobKey} job={job} busy={busy === job.jobKey} onPromote={onPromote} onTriage={onTriage} note={job.reviewReason} />
+            <JobRow key={job.jobKey} job={job} busy={busy === job.jobKey} onPromote={onPromote} onDiscard={onDiscard} note={job.reviewReason} />
           ))}
         </ul>
       )}
-    </section>
-  );
-}
-
-/** "Barreira de Experiência: pede 5+ anos (você tem 3)" -> "Barreira de Experiência". */
-const reasonGroup = (reason: string) => reason.split(":")[0].trim();
-
-function DiscardedTab({ page }: { page: JobsPage | null }) {
-  const [group, setGroup] = useState("all");
-  const jobs = (page?.jobs ?? []).filter((j) => j.discardReason);
-  const groups = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const j of jobs) counts.set(reasonGroup(j.discardReason!), (counts.get(reasonGroup(j.discardReason!)) ?? 0) + 1);
-    return [...counts.entries()].sort((a, b) => b[1] - a[1]);
-  }, [jobs]);
-  const shown = group === "all" ? jobs : jobs.filter((j) => reasonGroup(j.discardReason!) === group);
-
-  return (
-    <section className="block">
-      <p className="block-note">every job a filter removed, with the reason. use it to check the rules are not throwing good jobs away.</p>
-      {groups.length > 0 && (
-        <div className="disc-filters">
-          <label className="field">
-            <span>reason</span>
-            <select value={group} onChange={(e) => setGroup(e.target.value)}>
-              <option value="all">all ({jobs.length})</option>
-              {groups.map(([g, n]) => (
-                <option key={g} value={g}>
-                  {g} ({n})
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-      )}
-      {page === null && <SkeletonList />}
-      {page !== null && shown.length === 0 && <p className="empty">nothing discarded in this window.</p>}
-      {shown.length > 0 && (
-        <ul className="apps">
-          {shown.slice(0, 300).map((job) => (
-            <li key={job.jobKey} className="app-row">
-              <div className="app-main">
-                <span className="app-title">
-                  <span className="app-role">{job.title}</span>
-                  <span className="app-company">
-                    {" //"}
-                    {job.company}
-                  </span>
-                  {job.sources.slice(0, 1).map((s) => (
-                    <a key={s.url} className="app-link" href={s.url} target="_blank" rel="noreferrer">
-                      [{sourceName(s.source)}]
-                    </a>
-                  ))}
-                </span>
-                <span className="disc-note">{job.discardReason}</span>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-      {shown.length > 300 && <p className="block-note">showing 300 of {shown.length}.</p>}
     </section>
   );
 }
@@ -562,6 +501,7 @@ function SettingsTab() {
       const saved = await api.discovery.saveSettings({
         alertEmail: String(data.get("alertEmail") ?? ""),
         alertThreshold: Number(data.get("alertThreshold")),
+        minScore: Number(data.get("minScore")),
         ownerYears: Number(data.get("ownerYears")),
         adherenceProfile: String(data.get("adherenceProfile") ?? ""),
       });
@@ -619,6 +559,10 @@ function SettingsTab() {
             <div className="field">
               <label htmlFor="alertThreshold">alert from score</label>
               <input id="alertThreshold" name="alertThreshold" type="number" min={0} max={100} defaultValue={settings.alertThreshold} />
+            </div>
+            <div className="field">
+              <label htmlFor="minScore">show from score</label>
+              <input id="minScore" name="minScore" type="number" min={0} max={100} defaultValue={settings.minScore} />
             </div>
             <div className="field">
               <label htmlFor="ownerYears">my years</label>

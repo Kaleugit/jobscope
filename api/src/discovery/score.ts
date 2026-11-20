@@ -8,7 +8,6 @@ import {
 } from "./judge";
 import {
   DEFAULT_SETTINGS,
-  DISC_JOB_PK,
   DISC_JOBDESC_PK,
   DISC_SETTINGS_PK,
   DISC_SETTINGS_SK,
@@ -16,7 +15,7 @@ import {
   type DiscoverySettings,
   type JobDescription,
 } from "./model";
-import type { KeyValueStore } from "./store";
+import { discardJob, type KeyValueStore } from "./store";
 
 export const BATCH_SIZE = 8;
 /** A job whose batches failed this many times goes to review instead of retrying forever. */
@@ -33,11 +32,14 @@ export async function getSettings(store: KeyValueStore): Promise<DiscoverySettin
   };
 }
 
+/** Only jobs the panel can still show are worth a call: its widest window is 7 days. */
+export const SCORE_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+
 /** Pending jobs, freshest first: when the quota runs short, today's jobs get scored. */
-export async function pendingJobs(store: KeyValueStore): Promise<DiscoveredJob[]> {
-  const jobs = await store.query<DiscoveredJob>(DISC_JOB_PK);
+export async function pendingJobs(store: KeyValueStore, now = new Date()): Promise<DiscoveredJob[]> {
+  const jobs = await store.recentJobs(new Date(now.getTime() - SCORE_WINDOW_MS));
   return jobs
-    .filter((j) => j.llmStatus === "pending" && !j.discardReason && !j.expired && !j.needsEvaluation)
+    .filter((j) => j.llmStatus === "pending" && !j.discardReason && !j.needsEvaluation)
     .sort((a, b) => (a.publishedAt < b.publishedAt ? 1 : -1));
 }
 
@@ -46,6 +48,8 @@ export interface ScoreStats {
   scored: number;
   review: number;
   discardedByLlm: number;
+  /** Scored below the Minimum Score: discarded. */
+  belowMinimum: number;
   /** Jobs still pending after this run (cap, quota or a failed batch). */
   pending: number;
   stoppedBy?: "cap" | "quota";
@@ -69,15 +73,16 @@ export async function scorePending(
   store: KeyValueStore,
   generate: GenerateJson,
   config: Pick<GeminiConfig, "intervalMs" | "maxCalls">,
-  options: { deadline?: number; batchSize?: number } = {}
+  options: { deadline?: number; batchSize?: number; now?: Date } = {}
 ): Promise<ScoreStats> {
+  const now = options.now ?? new Date();
   const settings = await getSettings(store);
-  const jobs = await pendingJobs(store);
+  const jobs = await pendingJobs(store, now);
   const size = options.batchSize ?? BATCH_SIZE;
   const batches: DiscoveredJob[][] = [];
   for (let i = 0; i < jobs.length; i += size) batches.push(jobs.slice(i, i + size));
 
-  const stats: ScoreStats = { calls: 0, scored: 0, review: 0, discardedByLlm: 0, pending: 0, errors: [] };
+  const stats: ScoreStats = { calls: 0, scored: 0, review: 0, discardedByLlm: 0, belowMinimum: 0, pending: 0, errors: [] };
 
   const queue = await runQueue(
     batches,
@@ -107,9 +112,19 @@ export async function scorePending(
         else if (!entry) next = failedAttempt(item.job, "o LLM não devolveu resultado para esta vaga");
         else next = applyJudgement(item.job, item.description, entry).job;
 
-        if (next.llmStatus === "done") stats.scored++;
         if (next.llmStatus === "review") stats.review++;
-        if (next.latam?.decidedBy === "llm" && next.latam.bucket === "discarded") stats.discardedByLlm++;
+
+        // Discarded is gone: by the LLM (not tech, LATAM closed) or below the
+        // Minimum Score. Deleted now; only the Fingerprint stays.
+        const lowScore =
+          next.llmStatus === "done" && !next.discardReason && (next.score ?? 0) < settings.minScore;
+        if ((next.discardReason || lowScore) && next.triage !== "promoted") {
+          if (lowScore) stats.belowMinimum++;
+          else stats.discardedByLlm++;
+          await discardJob(store, next.jobKey, now);
+          continue;
+        }
+        if (next.llmStatus === "done") stats.scored++;
         await store.put(next);
       }
     },
@@ -118,6 +133,6 @@ export async function scorePending(
 
   stats.calls = queue.calls;
   stats.stoppedBy = queue.stoppedBy;
-  stats.pending = (await pendingJobs(store)).length;
+  stats.pending = (await pendingJobs(store, now)).length;
   return stats;
 }

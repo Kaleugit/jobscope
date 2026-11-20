@@ -43,8 +43,12 @@ Janela de horário que a vaga pede. É só informação: o dono aceita qualquer 
 _Avoid_: timezone, overlap
 
 **Descartada**:
-Vaga Descoberta retirada da lista por um filtro (Balde LATAM ou Barreira de Experiência), guardada com o motivo para auditoria das regras.
-_Avoid_: rejeitada, excluída
+Vaga Descoberta que saiu do jogo: por um filtro (área, Balde LATAM, Barreira de Experiência), por nota abaixo da Nota Mínima, ou porque o dono a descartou. É apagada na hora e não aparece em lugar nenhum; dela só fica a Impressão Digital.
+_Avoid_: rejeitada, excluída, ignorada
+
+**Impressão Digital**:
+Registro mínimo e invisível de uma Descartada, sem título nem descrição, que só impede a coleta de julgá-la de novo enquanto ela seguir listada na Fonte. Some sozinha 30 dias depois.
+_Avoid_: tombstone, cache
 
 ### Nota
 
@@ -55,6 +59,14 @@ _Avoid_: job profile, perfil de vaga
 **Natureza do Trabalho**:
 O quanto a vaga remunera julgamento de engenharia (decidir onde usar IA e onde usar código determinístico, arquitetura, regra de negócio, custo) em vez de execução numa stack específica. É o critério de ordenação.
 _Avoid_: match de skills, aderência técnica
+
+**Nota Mínima**:
+A menor Natureza do Trabalho que uma vaga precisa ter para aparecer no painel (60). Abaixo dela, a vaga é Descartada.
+_Avoid_: corte, threshold
+
+**Promover**:
+Transformar uma Vaga Descoberta em Candidatura com status wishlist ("quero aplicar"). Não é aplicar: aplicar é mudar a Candidatura para applied. Só vagas promovidas ficam guardadas para sempre; as não decididas somem 30 dias após a publicação.
+_Avoid_: salvar, aplicar
 
 **Alerta de Vaga**:
 E-mail enviado ao dono quando uma coleta encontra vaga nova com Balde LATAM confirmado e Natureza do Trabalho acima do limite. Agrupa as vagas da coleta e nunca repete uma vaga já alertada; o resto fica só no painel.
