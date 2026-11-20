@@ -1,0 +1,195 @@
+{
+ "jobs": [
+  {
+   "absolute_url": "https://job-boards.greenhouse.io/coderoad/jobs/4406476009",
+   "data_compliance": [
+    {
+     "type": "gdpr",
+     "requires_consent": false,
+     "requires_processing_consent": false,
+     "requires_retention_consent": false,
+     "retention_period": null,
+     "demographic_data_consent_applies": false
+    }
+   ],
+   "internal_job_id": 4235179009,
+   "location": {
+    "name": "Latin America"
+   },
+   "metadata": null,
+   "id": 4406476009,
+   "updated_at": "2026-10-15T15:34:22-04:00",
+   "requisition_id": "185",
+   "title": "Agentic AI Engineer",
+   "company_name": "CodeRoad",
+   "first_published": "2026-09-15T17:16:41-04:00",
+   "language": "en",
+   "application_deadline": null,
+   "content": "&lt;p&gt;&lt;/p&gt;\n&lt;h3 data-path-to-node=&quot;1&quot;&gt;About CodeRoad&lt;/h3&gt;\n&lt;p data-path-to-node=&quot;2&quot;&gt;CodeRoad is a technology execution partner trusted by companies across North America since 2002. We work alongside our clients to engineer, modernize, and scale the technology that powers their businesses, combining deep technical expertise, specialized teams, and shared accountability for outcomes. Our capabilities span product engineering, platform engineering, legacy modernization, and AI engineering.&lt;/p&gt;\n&lt;p data-path-to-node=&quot;3&quot;&gt;Our engineers, designers, delivery leaders, and technology specialists collaborate through Velocity Studios: specialized teams developed within CodeRoad to deliver complex technology initiatives. Being assigned to a project means you become part of a collaborative environment where you can strengthen your exper",
+   "departments": [
+    {
+     "id": 4023993009,
+     "name": "CodeRoad",
+     "child_ids": [],
+     "parent_id": null
+    }
+   ],
+   "offices": [
+    {
+     "id": 4023243009,
+     "name": "Remote",
+     "location": null,
+     "child_ids": [],
+     "parent_id": null
+    }
+   ],
+   "ai_disclaimer": null,
+   "include_ai_disclaimer": null,
+   "ai_opt_out_request_url": null
+  },
+  {
+   "absolute_url": "https://job-boards.greenhouse.io/coderoad/jobs/4456634009",
+   "data_compliance": [
+    {
+     "type": "gdpr",
+     "requires_consent": false,
+     "requires_processing_consent": false,
+     "requires_retention_consent": false,
+     "retention_period": null,
+     "demographic_data_consent_applies": false
+    }
+   ],
+   "internal_job_id": 4269903009,
+   "location": {
+    "name": "Latin America"
+   },
+   "metadata": null,
+   "id": 4456634009,
+   "updated_at": "2026-10-19T10:35:15-04:00",
+   "requisition_id": "197",
+   "title": "Data Engineer",
+   "company_name": "CodeRoad",
+   "first_published": "2026-10-19T10:33:26-04:00",
+   "language": "en",
+   "application_deadline": null,
+   "content": "&lt;p data-path-to-node=&quot;1&quot;&gt;&lt;strong data-path-to-node=&quot;1&quot; data-index-in-node=&quot;0&quot;&gt;Engagement Type:&lt;/strong&gt; Full-Time / Contractor&lt;/p&gt;\n&lt;h3 data-path-to-node=&quot;2&quot;&gt;About CodeRoad&lt;/h3&gt;\n&lt;p data-path-to-node=&quot;3&quot;&gt;CodeRoad is a technology execution partner trusted by companies across North America since 2002. We work alongside our clients to engineer, modernize, and scale the technology that powers their businesses, combining deep technical expertise, specialized teams, and shared accountability for outcomes. Our capabilities span product engineering, platform engineering, legacy modernization, and AI engineering.&lt;/p&gt;\n&lt;p data-path-to-node=&quot;4&quot;&gt;Our engineers, designers, delivery leaders, and technology specialists collaborate through Velocity Studios: specialized teams developed within Cod",
+   "departments": [
+    {
+     "id": 4023993009,
+     "name": "CodeRoad",
+     "child_ids": [],
+     "parent_id": null
+    }
+   ],
+   "offices": [
+    {
+     "id": 4023243009,
+     "name": "Remote",
+     "location": null,
+     "child_ids": [],
+     "parent_id": null
+    }
+   ],
+   "ai_disclaimer": null,
+   "include_ai_disclaimer": null,
+   "ai_opt_out_request_url": null
+  },
+  {
+   "absolute_url": "https://job-boards.greenhouse.io/coderoad/jobs/4209374009",
+   "data_compliance": [
+    {
+     "type": "gdpr",
+     "requires_consent": false,
+     "requires_processing_consent": false,
+     "requires_retention_consent": false,
+     "retention_period": null,
+     "demographic_data_consent_applies": false
+    }
+   ],
+   "internal_job_id": 4122559009,
+   "location": {
+    "name": "Latin America"
+   },
+   "metadata": null,
+   "id": 4209374009,
+   "updated_at": "2026-04-07T14:34:10-04:00",
+   "requisition_id": "85",
+   "title": "Delivery Director",
+   "company_name": "CodeRoad",
+   "first_published": "2026-04-06T12:07:21-04:00",
+   "language": "en",
+   "application_deadline": null,
+   "content": "&lt;h3&gt;&lt;strong&gt;About CodeRoad&lt;/strong&gt;&lt;/h3&gt;\n&lt;p&gt;CodeRoad provides end-to-end software development services, helping businesses scale with ideal infrastructure solutions. From staff augmentation to dedicated IT teams and general software engineering, our nearshore technology services empower businesses to thrive in an ever-evolving digital landscape.&lt;/p&gt;\n&lt;h3&gt;&lt;strong&gt;About the Role&lt;/strong&gt;&lt;/h3&gt;\n&lt;p&gt;The Delivery Director is responsible for leading and scaling CodeRoad’s delivery organization, ensuring the successful execution of high-quality solutions for clients. This role bridges technical leadership, people management, and delivery oversight, while fostering a culture of innovation, collaboration, and continuous improvement.&lt;/p&gt;\n&lt;p&gt;You will act as a strategic technical partner for our clients, bridging their busine",
+   "departments": [
+    {
+     "id": 4023993009,
+     "name": "CodeRoad",
+     "child_ids": [],
+     "parent_id": null
+    }
+   ],
+   "offices": [
+    {
+     "id": 4023243009,
+     "name": "Remote",
+     "location": null,
+     "child_ids": [],
+     "parent_id": null
+    }
+   ],
+   "ai_disclaimer": null,
+   "include_ai_disclaimer": null,
+   "ai_opt_out_request_url": null
+  },
+  {
+   "absolute_url": "https://job-boards.greenhouse.io/coderoad/jobs/4328679009",
+   "data_compliance": [
+    {
+     "type": "gdpr",
+     "requires_consent": false,
+     "requires_processing_consent": false,
+     "requires_retention_consent": false,
+     "retention_period": null,
+     "demographic_data_consent_applies": false
+    }
+   ],
+   "internal_job_id": 4192913009,
+   "location": {
+    "name": "Latin America"
+   },
+   "metadata": null,
+   "id": 4328679009,
+   "updated_at": "2026-11-06T09:15:58-05:00",
+   "requisition_id": "154",
+   "title": "Lead Java Consultant ",
+   "company_name": "CodeRoad",
+   "first_published": "2026-07-22T16:14:25-04:00",
+   "language": "en",
+   "application_deadline": null,
+   "content": "&lt;p data-path-to-node=&quot;1&quot;&gt;&lt;strong data-path-to-node=&quot;1&quot; data-index-in-node=&quot;0&quot;&gt;Engagement Type:&lt;/strong&gt; Full-Time / Contractor&lt;/p&gt;\n&lt;h1 data-path-to-node=&quot;2&quot;&gt;&lt;strong data-path-to-node=&quot;2&quot; data-index-in-node=&quot;0&quot;&gt;Lead Java Consultant&lt;/strong&gt;&lt;/h1&gt;\n&lt;p data-path-to-node=&quot;3&quot;&gt;&lt;strong data-path-to-node=&quot;3&quot; data-index-in-node=&quot;0&quot;&gt;Location:&lt;/strong&gt; Latin America (100% Remote)&lt;/p&gt;\n&lt;p data-path-to-node=&quot;4&quot;&gt;&lt;strong data-path-to-node=&quot;4&quot; data-index-in-node=&quot;0&quot;&gt;Engagement Type:&lt;/strong&gt; Full-Time / Contractor&lt;/p&gt;\n&lt;h3 data-path-to-node=&quot;6&quot;&gt;&lt;strong data-path-to-node=&quot;6&quot; data-index-in-node=&quot;0&quot;&gt;About CodeRoad&lt;/strong&gt;&lt;/h3&gt;\n&lt;p data-path-t",
+   "departments": [
+    {
+     "id": 4023993009,
+     "name": "CodeRoad",
+     "child_ids": [],
+     "parent_id": null
+    }
+   ],
+   "offices": [
+    {
+     "id": 4023243009,
+     "name": "Remote",
+     "location": null,
+     "child_ids": [],
+     "parent_id": null
+    }
+   ],
+   "ai_disclaimer": null,
+   "include_ai_disclaimer": null,
+   "ai_opt_out_request_url": null
+  }
+ ],
+ "meta": {
+  "total": 4
+ }
+}

@@ -1,0 +1,77 @@
+[
+ {
+  "additional": "",
+  "additionalPlain": "",
+  "categories": {
+   "location": "Remote (Latin America, Europe)",
+   "team": "Client - Healthcare Platform",
+   "allLocations": [
+    "Remote (Latin America, Europe)"
+   ]
+  },
+  "createdAt": 1766530472509,
+  "descriptionPlain": "Build and scale the data infrastructure for a fast-growing, profitable health-tech company. In this role, you will design the robust pipelines, storage architectures, and data models that ensure our datasets are accurate, secure, and ready to drive critical decisions helping millions of insured Americans access their medications.\nWe are hiring a Senior Data Engineer to own the evolution of the data platform. You will be responsible for moving our client toward modern data engineering standards—structuring our warehouse, enforcing clean data modeling practices, and managing our infrastructure via code.\nWhat You’ll Do\nDesign and implement scalable data models in Snowflake utilizing modern frameworks like the Medallion Architecture (Bronze/Silver/Gold layers).\nBuild, maintain, and optimize robust data transformation pipelines using dbt.\nProvision, manage, and scale cloud infrastructure secu",
+  "description": "<p data-path-to-node=\"7\">Build and scale the data infrastructure for a fast-growing, profitable health-tech company. In this role, you will design the robust pipelines, storage architectures, and data models that ensure our datasets are accurate, secure, and ready to drive critical decisions helping millions of insured Americans access their medications.</p>\n<p data-path-to-node=\"8\">We are hiring a <strong>Senior Data Engineer</strong> to own the evolution of the data platform. You will be responsible for moving our client toward modern data engineering standards—structuring our warehouse, enforcing clean data modeling practices, and managing our infrastructure via code.</p>\n<h4 data-path-to-node=\"9\">What You’ll Do</h4>\n<ul data-path-to-node=\"10\">\n<li>\n<p data-path-to-node=\"10,0,0\">Design and implement scalable data models in Snowflake utilizing modern frameworks like the Medallion Archi",
+  "id": "8d6cdb0a-27b4-4411-90e6-b7763876db36",
+  "lists": [],
+  "text": "Senior Data Engineer",
+  "country": "MX",
+  "workplaceType": "remote",
+  "opening": "",
+  "openingPlain": "",
+  "descriptionBody": "<p data-path-to-node=\"7\">Build and scale the data infrastructure for a fast-growing, profitable health-tech company. In this role, you will design the robust pipelines, storage architectures, and data models that ensure our datasets are accurate, secure, and ready to drive critical decisions helping millions of insured Americans access their medications.</p>\n<p data-path-to-node=\"8\">We are hiring a <strong>Senior Data Engineer</strong> to own the evolution of the data platform. You will be responsible for moving our client toward modern data engineering standards&mdash;structuring our warehouse, enforcing clean data modeling practices, and managing our infrastructure via code.</p>\n<h4 data-path-to-node=\"9\">What You&rsquo;ll Do</h4>\n<ul data-path-to-node=\"10\">\n<li>\n<p data-path-to-node=\"10,0,0\">Design and implement scalable data models in Snowflake utilizing modern frameworks like the Med",
+  "descriptionBodyPlain": "Build and scale the data infrastructure for a fast-growing, profitable health-tech company. In this role, you will design the robust pipelines, storage architectures, and data models that ensure our datasets are accurate, secure, and ready to drive critical decisions helping millions of insured Americans access their medications.\nWe are hiring a Senior Data Engineer to own the evolution of the data platform. You will be responsible for moving our client toward modern data engineering standards—structuring our warehouse, enforcing clean data modeling practices, and managing our infrastructure via code.\nWhat You’ll Do\nDesign and implement scalable data models in Snowflake utilizing modern frameworks like the Medallion Architecture (Bronze/Silver/Gold layers).\nBuild, maintain, and optimize robust data transformation pipelines using dbt.\nProvision, manage, and scale cloud infrastructure secu",
+  "hostedUrl": "https://jobs.lever.co/JetBridge/8d6cdb0a-27b4-4411-90e6-b7763876db36",
+  "applyUrl": "https://jobs.lever.co/JetBridge/8d6cdb0a-27b4-4411-90e6-b7763876db36/apply"
+ },
+ {
+  "additional": "",
+  "additionalPlain": "",
+  "categories": {
+   "location": "Remote (Latin America)",
+   "team": "Client - Marketing Intelligence Platform",
+   "allLocations": [
+    "Remote (Latin America)"
+   ]
+  },
+  "createdAt": 1770996339476,
+  "descriptionPlain": "Referring a Candidate for a bounty? Please visit Refer a Dev to submit.\n \n--\n \nBuild high-performance analytics software used by leading eCommerce brands to make real revenue decisions.\n \nOur Client is scaling one of the most advanced marketing intelligence platforms in the market. Their product gives brands a unified, reliable view of ad spend, attribution, and the full customer journey through powerful dashboards and analytics infrastructure. They have strong product-market fit, rapid growth, and are expanding their engineering team.\n \nThey are hiring a Senior Fullstack Engineer (TypeScript) to own major product features across the stack and help shape the technical direction of the platform.\n \nThe Role\nThis is a true product engineering role. You will design, build, and ship end-to-end features that power a sophisticated analytics dashboard used daily by enterprise customers.\n \nYou wi",
+  "description": "<div>Referring a Candidate for a bounty? Please visit <a rel=\"noopener noreferrer\" href=\"https://jetbridge.com/refer\" class=\"postings-link\">Refer a Dev</a> to submit.</div>\n<div>&nbsp;</div>\n<div>--</div>\n<div>&nbsp;</div>\n<div><strong>Build high-performance analytics software used by leading eCommerce brands to make real revenue decisions.</strong></div>\n<div>&nbsp;</div>\n<div>Our Client is scaling one of the most advanced marketing intelligence platforms in the market. Their product gives brands a unified, reliable view of ad spend, attribution, and the full customer journey through powerful dashboards and analytics infrastructure. They have strong product-market fit, rapid growth, and are expanding their engineering team.</div>\n<div>&nbsp;</div>\n<div>They are hiring a <strong>Senior Fullstack Engineer (TypeScript)</strong> to own major product features across the stack and help shape ",
+  "id": "a1a5c479-ab69-43d7-b03f-c97b8af6f57e",
+  "lists": [],
+  "text": "Senior Fullstack Engineer (TypeScript)",
+  "country": "BR",
+  "workplaceType": "remote",
+  "opening": "",
+  "openingPlain": "",
+  "descriptionBody": "<div>Referring a Candidate for a bounty? Please visit <a class=\"postings-link\" href=\"https://jetbridge.com/refer\" target=\"_blank\" rel=\"noopener noreferrer\">Refer a Dev</a> to submit.</div>\n<div>&nbsp;</div>\n<div>--</div>\n<div>&nbsp;</div>\n<div><strong>Build high-performance analytics software used by leading eCommerce brands to make real revenue decisions.</strong></div>\n<div>&nbsp;</div>\n<div>Our Client is scaling one of the most advanced marketing intelligence platforms in the market. Their product gives brands a unified, reliable view of ad spend, attribution, and the full customer journey through powerful dashboards and analytics infrastructure. They have strong product-market fit, rapid growth, and are expanding their engineering team.</div>\n<div>&nbsp;</div>\n<div>They are hiring a <strong>Senior Fullstack Engineer (TypeScript)</strong> to own major product features across the stack",
+  "descriptionBodyPlain": "Referring a Candidate for a bounty? Please visit Refer a Dev to submit.\n \n--\n \nBuild high-performance analytics software used by leading eCommerce brands to make real revenue decisions.\n \nOur Client is scaling one of the most advanced marketing intelligence platforms in the market. Their product gives brands a unified, reliable view of ad spend, attribution, and the full customer journey through powerful dashboards and analytics infrastructure. They have strong product-market fit, rapid growth, and are expanding their engineering team.\n \nThey are hiring a Senior Fullstack Engineer (TypeScript) to own major product features across the stack and help shape the technical direction of the platform.\n \nThe Role\nThis is a true product engineering role. You will design, build, and ship end-to-end features that power a sophisticated analytics dashboard used daily by enterprise customers.\n \nYou wi",
+  "hostedUrl": "https://jobs.lever.co/JetBridge/a1a5c479-ab69-43d7-b03f-c97b8af6f57e",
+  "applyUrl": "https://jobs.lever.co/JetBridge/a1a5c479-ab69-43d7-b03f-c97b8af6f57e/apply"
+ },
+ {
+  "additional": "",
+  "additionalPlain": "",
+  "categories": {
+   "location": "Hybrid Boston or Palo Alto",
+   "team": "Client - AI Developer Tools",
+   "allLocations": [
+    "Hybrid Boston or Palo Alto"
+   ]
+  },
+  "createdAt": 1783671773844,
+  "descriptionPlain": "Our client is building a next-generation enterprise platform that aligns product requirements directly with code, drastically reducing software maintenance costs. Their system enables seamless collaboration across diverse enterprise teams, allowing technical managers and engineers to prototype and update architectures faster using automated, agentic workflows.\nThey are looking for a hybrid Senior UI/UX Engineer to champion user experience and build out the scalable frontend architecture that brings this platform to life. \nAbout the role:\nAs a Senior UI/UX Engineer, you will own the user experience of a complex, AI-driven enterprise platform. Your primary goal is to make sophisticated technical workflows highly intuitive and accessible for developers, product managers, and executives alike. This is a hybrid \"Design Engineer\" role requiring a deep understanding of product design coupled wi",
+  "description": "<p data-path-to-node=\"6\" id=\"p-rc_36c956e8ae2ecd39-82\"><span data-path-to-node=\"6,0\">Our client is building a next-generation enterprise platform that aligns product requirements directly with code, drastically reducing software maintenance costs</span><span data-path-to-node=\"6,1\"><sup></sup></span><span data-path-to-node=\"6,2\">. Their system enables seamless collaboration across diverse enterprise teams, allowing technical managers and engineers to prototype and update architectures faster using automated, agentic workflows</span><span data-path-to-node=\"6,3\"><sup></sup></span><span data-path-to-node=\"6,4\">.</span> </p>\n<p data-path-to-node=\"7\" id=\"p-rc_36c956e8ae2ecd39-83\"><span data-path-to-node=\"7,0\">They are looking for a hybrid <strong>Senior UI/UX Engineer</strong> to champion user experience and build out the scalable frontend architecture that brings this platform to life</span",
+  "id": "f27530aa-8043-47b7-82d9-99d939622289",
+  "lists": [],
+  "text": "UI/UX Engineer (Frontend)",
+  "country": "US",
+  "workplaceType": "hybrid",
+  "opening": "",
+  "openingPlain": "",
+  "descriptionBody": "<p id=\"p-rc_36c956e8ae2ecd39-82\" data-path-to-node=\"6\"><span data-path-to-node=\"6,0\">Our client is building a next-generation enterprise platform that aligns product requirements directly with code, drastically reducing software maintenance costs</span><span data-path-to-node=\"6,1\"><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><sup><!----></sup><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><!----></span><span data-path-to",
+  "descriptionBodyPlain": "Our client is building a next-generation enterprise platform that aligns product requirements directly with code, drastically reducing software maintenance costs. Their system enables seamless collaboration across diverse enterprise teams, allowing technical managers and engineers to prototype and update architectures faster using automated, agentic workflows.\nThey are looking for a hybrid Senior UI/UX Engineer to champion user experience and build out the scalable frontend architecture that brings this platform to life. \nAbout the role:\nAs a Senior UI/UX Engineer, you will own the user experience of a complex, AI-driven enterprise platform. Your primary goal is to make sophisticated technical workflows highly intuitive and accessible for developers, product managers, and executives alike. This is a hybrid \"Design Engineer\" role requiring a deep understanding of product design coupled wi",
+  "hostedUrl": "https://jobs.lever.co/JetBridge/f27530aa-8043-47b7-82d9-99d939622289",
+  "applyUrl": "https://jobs.lever.co/JetBridge/f27530aa-8043-47b7-82d9-99d939622289/apply"
+ }
+]

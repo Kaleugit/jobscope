@@ -1,0 +1,124 @@
+{
+ "jobs": [
+  {
+   "id": "db5d75d3-8b5d-4ecd-b2fd-3ac3449a67ac",
+   "title": "EU GO Senior Software Engineer",
+   "department": "Engineering",
+   "team": "General Engineering",
+   "employmentType": "FullTime",
+   "location": "Remote/Greece",
+   "secondaryLocations": [],
+   "publishedAt": "2026-03-03T05:02:17.867+00:00",
+   "isListed": true,
+   "isRemote": true,
+   "workplaceType": "Remote",
+   "address": {
+    "postalAddress": {
+     "addressCountry": "Greece",
+     "addressLocality": "Athens"
+    }
+   },
+   "jobUrl": "https://jobs.ashbyhq.com/connectly/db5d75d3-8b5d-4ecd-b2fd-3ac3449a67ac",
+   "applyUrl": "https://jobs.ashbyhq.com/connectly/db5d75d3-8b5d-4ecd-b2fd-3ac3449a67ac/application",
+   "descriptionHtml": "<p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">At Connectly we are building the future of conversational commerce in Latin America with the focus on Whatsapp. Instead of shoppers installing yet another app, we are offering a 360 engagement platform for retailers inside of an app that everyone already have on their phone - Whatsapp. </p><div style=\"min-height:1.2em;margin-top:0px;margin-bottom:0px\"> </div><p style=\"min-height:1.5em\">We are a VC-backed Series B startup with a world-class team hailing from Meta, Google, Uber, and other top Silicon Valley companies. We operate as a hybrid company, with offices in Bogotá and San Francisco, and a remote-first culture everywhere else.</p><p></p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\"><strong>Job summary</strong></p><p></p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">We’re looking for an exception",
+   "descriptionPlain": "At Connectly we are building the future of conversational commerce in Latin America with the focus on Whatsapp. Instead of shoppers installing yet another app, we are offering a 360 engagement platform for retailers inside of an app that everyone already have on their phone - Whatsapp. \n\n \n\nWe are a VC-backed Series B startup with a world-class team hailing from Meta, Google, Uber, and other top Silicon Valley companies. We operate as a hybrid company, with offices in Bogotá and San Francisco, and a remote-first culture everywhere else.\n\n\n\nJob summary\n\n - We’re looking for an exceptional Senior Backend Engineer with strong Go (Golang) expertise and experience designing large-scale distributed systems.\n\n - You’ll work across backend and frontend domains, collaborating closely with product, sales, and AI platform teams to design, prototype, and launch powerful conversational experiences fo"
+  },
+  {
+   "id": "d4e82fbb-8f7f-4d8f-a6f2-5ebf2c84edc9",
+   "title": "Staff AI engineer",
+   "department": "Engineering",
+   "team": "General Engineering",
+   "employmentType": "FullTime",
+   "location": "San Francisco",
+   "secondaryLocations": [],
+   "publishedAt": "2026-03-03T05:02:17.867+00:00",
+   "isListed": true,
+   "isRemote": true,
+   "workplaceType": "Hybrid",
+   "address": {
+    "postalAddress": {
+     "addressRegion": "California",
+     "addressCountry": "United States",
+     "addressLocality": "San Francisco"
+    }
+   },
+   "jobUrl": "https://jobs.ashbyhq.com/connectly/d4e82fbb-8f7f-4d8f-a6f2-5ebf2c84edc9",
+   "applyUrl": "https://jobs.ashbyhq.com/connectly/d4e82fbb-8f7f-4d8f-a6f2-5ebf2c84edc9/application",
+   "descriptionHtml": "<p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">At Connectly we are building the future of conversational commerce in Latin America with the focus on Whatsapp. Buying on Whatsapp is ubiquitous in Latin America, yet only small businesses have made it truly seamless by asking real people to respond to Whatsapp messages. We at Connectly are building an AI-powered sales platform for large retailers. </p><div style=\"min-height:1.2em;margin-top:0px;margin-bottom:0px\"> </div><p style=\"min-height:1.5em\">We’re a VC-backed Series B startup with a world-class team from Meta, Google, Uber, and other leading Silicon Valley companies. We operate as a hybrid organization, with offices in Bogotá and San Francisco, and distributed teams across Latin America, including Brazil, where many of our AI initiatives are based.</p><p></p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\"><str",
+   "descriptionPlain": "At Connectly we are building the future of conversational commerce in Latin America with the focus on Whatsapp. Buying on Whatsapp is ubiquitous in Latin America, yet only small businesses have made it truly seamless by asking real people to respond to Whatsapp messages. We at Connectly are building an AI-powered sales platform for large retailers. \n\n \n\nWe’re a VC-backed Series B startup with a world-class team from Meta, Google, Uber, and other leading Silicon Valley companies. We operate as a hybrid organization, with offices in Bogotá and San Francisco, and distributed teams across Latin America, including Brazil, where many of our AI initiatives are based.\n\n\n\nJob summary\n\n - We are seeking an accomplished and visionary Staff AI Engineer to lead Connectly’s company-wide technical strategy for AI systems and infrastructure. This position reports directly to the CTO and plays a central "
+  },
+  {
+   "id": "30e751f5-322a-4dd7-a361-9fc55bb748e4",
+   "title": "Senior Software Engineer (SF)",
+   "department": "Engineering",
+   "team": "General Engineering",
+   "employmentType": "FullTime",
+   "location": "San Francisco",
+   "secondaryLocations": [],
+   "publishedAt": "2026-03-03T05:02:17.867+00:00",
+   "isListed": true,
+   "isRemote": true,
+   "workplaceType": "Hybrid",
+   "address": {
+    "postalAddress": {
+     "addressRegion": "California",
+     "addressCountry": "United States",
+     "addressLocality": "San Francisco"
+    }
+   },
+   "jobUrl": "https://jobs.ashbyhq.com/connectly/30e751f5-322a-4dd7-a361-9fc55bb748e4",
+   "applyUrl": "https://jobs.ashbyhq.com/connectly/30e751f5-322a-4dd7-a361-9fc55bb748e4/application",
+   "descriptionHtml": "<p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">At Connectly we are building the future of conversational commerce in Latin America with the focus on Whatsapp. Instead of shoppers installing yet another app, we are offering a 360 engagement platform for retailers inside of an app that everyone already have on their phone - Whatsapp. </p><div style=\"min-height:1.2em;margin-top:0px;margin-bottom:0px\"> </div><p style=\"min-height:1.5em\">We are a VC-backed Series B startup with a world-class team hailing from Meta, Google, Uber, and other top Silicon Valley companies. We operate as a hybrid company, with offices in Bogotá and San Francisco, and a remote-first culture everywhere else.</p><p></p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\"><strong>Job summary</strong></p><p></p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">We’re looking for an exception",
+   "descriptionPlain": "At Connectly we are building the future of conversational commerce in Latin America with the focus on Whatsapp. Instead of shoppers installing yet another app, we are offering a 360 engagement platform for retailers inside of an app that everyone already have on their phone - Whatsapp. \n\n \n\nWe are a VC-backed Series B startup with a world-class team hailing from Meta, Google, Uber, and other top Silicon Valley companies. We operate as a hybrid company, with offices in Bogotá and San Francisco, and a remote-first culture everywhere else.\n\n\n\nJob summary\n\n - We’re looking for an exceptional Senior Software Engineer who thrives in building large-scale, enterprise-grade systems and is passionate about shaping how AI transforms retail commerce. You’ll work across backend and frontend domains, collaborating closely with product, sales, and AI platform teams to design, prototype, and launch powe"
+  },
+  {
+   "id": "ab5d93c1-70b9-4f2f-9e13-a21b299b4d95",
+   "title": "Account Manager (Brazil)",
+   "department": "Sales",
+   "team": "Sales",
+   "employmentType": "FullTime",
+   "location": "Remote/Brazil",
+   "secondaryLocations": [],
+   "publishedAt": "2026-06-01T18:22:07.398+00:00",
+   "isListed": true,
+   "isRemote": true,
+   "workplaceType": "Remote",
+   "address": {
+    "postalAddress": {
+     "addressRegion": "Brazil",
+     "addressCountry": "Brazil",
+     "addressLocality": "Brazil"
+    }
+   },
+   "jobUrl": "https://jobs.ashbyhq.com/connectly/ab5d93c1-70b9-4f2f-9e13-a21b299b4d95",
+   "applyUrl": "https://jobs.ashbyhq.com/connectly/ab5d93c1-70b9-4f2f-9e13-a21b299b4d95/application",
+   "descriptionHtml": "<h2><strong>Are You Ready to Revolutionize Communication and Commerce with </strong><a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"http://Connectly.ai\"><strong>Connectly.ai</strong></a><strong>?</strong></h2><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">At Connectly, we’re building the future of conversational commerce in Latin America, starting with WhatsApp. Our 360° AI engagement platform empowers retailers to sell, support, and scale directly inside the app their customers already use every day.</p></li><li><p style=\"min-height:1.5em\">We’re a VC-backed Series B startup with a world-class team from Meta, Google, Uber, and other leading Silicon Valley companies. We operate as a hybrid organization, with offices in Bogotá and San Francisco, and distributed teams across Latin America, including Brazil, where many of our AI initiatives are based.</p></li><li><p",
+   "descriptionPlain": "ARE YOU READY TO REVOLUTIONIZE COMMUNICATION AND COMMERCE WITH CONNECTLY.AI http://Connectly.ai?\n\n - At Connectly, we’re building the future of conversational commerce in Latin America, starting with WhatsApp. Our 360° AI engagement platform empowers retailers to sell, support, and scale directly inside the app their customers already use every day.\n\n - We’re a VC-backed Series B startup with a world-class team from Meta, Google, Uber, and other leading Silicon Valley companies. We operate as a hybrid organization, with offices in Bogotá and San Francisco, and distributed teams across Latin America, including Brazil, where many of our AI initiatives are based.\n\n - To bring this vision to life, we’re looking for candidates who are passionate about redefining customer engagement and have a deep belief in the power of AI and WhatsApp to create genuine, impactful interactions. We seek indivi"
+  },
+  {
+   "id": "f1643414-a4c6-4392-85b5-2e888ad65c64",
+   "title": "Account Manager (EU)",
+   "department": "Sales",
+   "team": "Sales",
+   "employmentType": "FullTime",
+   "location": "Europe",
+   "secondaryLocations": [],
+   "publishedAt": "2026-09-02T16:12:20.738+00:00",
+   "isListed": true,
+   "isRemote": true,
+   "workplaceType": "Remote",
+   "address": {
+    "postalAddress": {
+     "addressRegion": "Europe",
+     "addressCountry": "European Union",
+     "addressLocality": "Europe"
+    }
+   },
+   "jobUrl": "https://jobs.ashbyhq.com/connectly/f1643414-a4c6-4392-85b5-2e888ad65c64",
+   "applyUrl": "https://jobs.ashbyhq.com/connectly/f1643414-a4c6-4392-85b5-2e888ad65c64/application",
+   "descriptionHtml": "<h2><strong>Are You Ready to Revolutionize Communication and Commerce with </strong><a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"http://Connectly.ai\"><strong>Connectly.ai</strong></a><strong>?</strong></h2><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">At Connectly, we’re building the future of conversational commerce in Latin America, starting with WhatsApp. Our 360° AI engagement platform empowers retailers to sell, support, and scale directly inside the app their customers already use every day.</p></li><li><p style=\"min-height:1.5em\">We’re a VC-backed Series B startup with a world-class team from Meta, Google, Uber, and other leading Silicon Valley companies. We operate as a hybrid organization, with offices in Bogotá and San Francisco, and distributed teams across Europe, Latin America, and more.</p></li><li><p style=\"min-height:1.5em\">To bring this visi",
+   "descriptionPlain": "ARE YOU READY TO REVOLUTIONIZE COMMUNICATION AND COMMERCE WITH CONNECTLY.AI http://Connectly.ai?\n\n - At Connectly, we’re building the future of conversational commerce in Latin America, starting with WhatsApp. Our 360° AI engagement platform empowers retailers to sell, support, and scale directly inside the app their customers already use every day.\n\n - We’re a VC-backed Series B startup with a world-class team from Meta, Google, Uber, and other leading Silicon Valley companies. We operate as a hybrid organization, with offices in Bogotá and San Francisco, and distributed teams across Europe, Latin America, and more.\n\n - To bring this vision to life, we’re looking for candidates who are passionate about redefining customer engagement and have a deep belief in the power of AI and WhatsApp to create genuine, impactful interactions. We seek individuals who are eager to tackle tough challeng"
+  }
+ ],
+ "apiVersion": "1"
+}

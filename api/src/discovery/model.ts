@@ -65,8 +65,21 @@ export interface NormalizedJob {
   salary?: string;
   /** ISO timestamp; undefined when the source does not say. */
   publishedAt?: string;
-  /** Structured location or timezone hints the source exposes, kept verbatim for the LATAM rules. */
-  locationHints: string[];
+  /** Structured fields the source exposes, verbatim, as "kind:value" ("location:Latin America",
+   *  "timezone:-5", "seniority:Senior", "workplace:remote"). The filters read these before
+   *  falling back to free text. */
+  hints: string[];
+}
+
+export interface CollectContext {
+  /** Only jobs published after this matter; sources that paginate stop here. */
+  since: Date;
+}
+
+/** Every source module has this shape, so adding a source is adding one file. */
+export interface Source {
+  id: SourceId;
+  fetchJobs(ctx: CollectContext): Promise<NormalizedJob[]>;
 }
 
 export interface Posting {
@@ -114,10 +127,17 @@ export interface DiscoveredJob {
   firstSeenAt: string;
   lastSeenAt: string;
   sources: JobSource[];
+  /** Structured hints from every source, merged; the filters read these first. */
+  hints: string[];
+  /** "<source>#<externalId>" of the posting whose text is the job's description. */
+  descriptionSource: string;
   descriptionHash: string;
 
-  /** Area pre-filter verdict. */
-  areaOk: boolean;
+  /** True when the job is new or its description changed: the filters and the
+   *  LLM step have not judged this version yet. */
+  needsEvaluation: boolean;
+  /** Area pre-filter verdict; absent until the filters run. */
+  areaOk?: boolean;
   latam?: {
     bucket: LatamBucket;
     decidedBy: DecidedBy;
