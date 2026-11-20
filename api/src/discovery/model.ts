@@ -156,6 +156,10 @@ export interface DiscoveredJob {
   score?: number;
   scoreReason?: string;
   llmStatus: LlmStatus;
+  /** Why the LLM output was rejected, when llmStatus is "review". */
+  reviewReason?: string;
+  /** Batches that came back without a usable entry for this job; at 2 it goes to review. */
+  llmAttempts?: number;
   /** Set when a filter removed the job, with the reason, for the audit tab. */
   discardReason?: string;
 
