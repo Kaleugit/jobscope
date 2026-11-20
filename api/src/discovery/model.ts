@@ -195,6 +195,19 @@ export interface Run {
   newJobs: number;
   llmCalls: number;
   alertsSent: number;
+  /** What happened after collection, for the Owner Area's last-run view. */
+  evaluation?: {
+    evaluated: number;
+    discardedByRules: number;
+    scored: number;
+    review: number;
+    discardedByLlm: number;
+    pending: number;
+    llmStoppedBy?: "cap" | "quota";
+    llmErrors?: string[];
+    alertSkipped?: string;
+    expired: number;
+  };
 }
 
 export interface DiscoverySettings {

@@ -19,7 +19,7 @@ import {
 /** The slice of DynamoDB the pipeline needs; tests pass an in-memory fake. */
 export interface KeyValueStore {
   get<T>(pk: string, sk: string): Promise<T | undefined>;
-  put(item: { pk: string; sk: string }): Promise<void>;
+  put<T extends { pk: string; sk: string }>(item: T): Promise<void>;
   query<T>(pk: string, options?: { skBeginsWith?: string; newestFirst?: boolean; limit?: number }): Promise<T[]>;
 }
 

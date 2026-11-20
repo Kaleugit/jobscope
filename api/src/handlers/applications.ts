@@ -13,6 +13,7 @@ import {
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { DeleteObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { InvokeCommand, LambdaClient } from "@aws-sdk/client-lambda";
 import { randomUUID } from "node:crypto";
 import {
   ddb,
@@ -45,6 +46,8 @@ import {
 const sqs = new SQSClient({});
 const s3 = new S3Client({});
 const ANALYZE_QUEUE_URL = process.env.ANALYZE_QUEUE_URL ?? "";
+const DISCOVERY_FN_NAME = process.env.DISCOVERY_FN_NAME ?? "";
+const lambda = new LambdaClient({});
 const RESUME_BUCKET = process.env.RESUME_BUCKET ?? "";
 
 const ALLOWED_RESUME_TYPES = [
@@ -583,6 +586,25 @@ export async function handler(
     if (event.routeKey.includes("/auth/accounts")) {
       if (!isMaster(session.username)) {
         return json(403, { error: "master account only" });
+      }
+    }
+
+    // The Owner Area: discovery is the master account's alone. Demo and guest
+    // accounts get the same 404 as any unknown route, so it does not show.
+    if (event.routeKey.includes(" /discovery")) {
+      if (!isMaster(session.username)) {
+        return json(404, { error: `unknown route: ${event.routeKey}` });
+      }
+      if (event.routeKey === "POST /discovery/run") {
+        if (!DISCOVERY_FN_NAME) return json(503, { error: "discovery is not deployed" });
+        await lambda.send(
+          new InvokeCommand({
+            FunctionName: DISCOVERY_FN_NAME,
+            InvocationType: "Event",
+            Payload: Buffer.from(JSON.stringify({ trigger: "manual" })),
+          })
+        );
+        return json(202, { started: true });
       }
     }
 
