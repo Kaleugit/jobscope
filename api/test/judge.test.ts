@@ -41,6 +41,7 @@ const baseJob = (over: Partial<DiscoveredJob> = {}): DiscoveredJob =>
   }) as DiscoveredJob;
 
 const answer = (over: Record<string, unknown> = {}) => ({
+  is_tech_role: true,
   latam: "sim",
   evidence: "This role is open to candidates in Latin America.",
   contract_type: "contractor",
@@ -70,6 +71,18 @@ describe("applyJudgement", () => {
     const r = applyJudgement(baseJob(), description, answer({ latam: "maybe" }));
     expect(r.ok).toBe(false);
     expect(r.job.llmStatus).toBe("review");
+  });
+
+  it("discards a job the model finds is not technical work, dropping the score", () => {
+    const r = applyJudgement(baseJob(), description, answer({ is_tech_role: false, score: 30, reason: "Facilitação de grupos de saúde mental." }));
+    expect(r.ok).toBe(true);
+    expect(r.job.discardReason).toMatch(/^área \(LLM\): Facilitação/);
+    expect(r.job.score).toBeUndefined();
+  });
+
+  it("rejects an answer without is_tech_role", () => {
+    const { is_tech_role: _omit, ...rest } = answer();
+    expect(applyJudgement(baseJob(), description, rest).ok).toBe(false);
   });
 
   it("rejects invalid JSON", () => {

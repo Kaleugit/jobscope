@@ -47,6 +47,8 @@ describe("area pre-filter", () => {
     "Product Owner, AI Pod",
     "Embedded Firmware Engineer",
     "Unreal Engine Developer",
+    "Don't see what you are looking for?",
+    "General Application - Engineering",
     "Customer Success Manager",
   ])("drops %s", (title) => expect(judgeArea(title, []).ok).toBe(false));
 
@@ -126,6 +128,39 @@ describe("LATAM layer 1", () => {
     it("lets residence in Brazil or LATAM through", () => {
       const v = judgeLatam(job({ hints: ["location:Worldwide"] }), "You must reside in Brazil or Argentina.");
       expect(v.bucket).toBe("likely");
+    });
+  });
+
+  describe("location lines inside the description", () => {
+    // Modern Health on WWR: region "Anywhere in the World", text "Locations: Remote - US".
+    const modernHealth =
+      "Headquarters: Remote - US\nWhile many roles may function from anywhere in the world, see each listing.\nLocations: Remote - US";
+
+    it("a role's own Location line beats the board's region", () => {
+      const v = judgeLatam(job({ hints: ["region:Anywhere in the World"] }), modernHealth);
+      expect(v.bucket).toBe("discarded");
+    });
+
+    it("Headquarters alone is not a restriction", () => {
+      const v = judgeLatam(job({ hints: ["region:Anywhere in the World"] }), "Headquarters: Remote - US\nWe hire everywhere.");
+      expect(v.bucket).toBe("likely");
+    });
+
+    it("a line that also opens the role does not discard", () => {
+      const text = "Location: US Based (Full-Time, Remote) or International Contractor (Full-Time, Remote)";
+      expect(judgeLatam(job({ hints: ["location:Worldwide"] }), text).bucket).toBe("likely");
+    });
+
+    it("a line that names no place does not discard", () => {
+      expect(judgeLatam(job({ hints: ["location:Worldwide"] }), "Location: About Hiredfy").bucket).toBe("likely");
+    });
+
+    it("a LATAM line confirms", () => {
+      expect(judgeLatam(job(), "Location: LATAM-Remote").bucket).toBe("confirmed");
+    });
+
+    it("a restricting line against a structured LATAM field goes to the LLM", () => {
+      expect(judgeLatam(job({ hints: ["location:Brazil"] }), "Location: Portugal, Remote").bucket).toBe("ambiguous");
     });
   });
 

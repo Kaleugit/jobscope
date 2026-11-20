@@ -75,6 +75,23 @@ export function negativeTermIn(text: string): string | undefined {
   return undefined;
 }
 
+/** "Location: Remote - US" / "Locations: ..." lines inside the description.
+ *  "Headquarters:" is where the company sits, not where the hire may live. */
+export function descriptionLocations(description: string): string[] {
+  return [...description.matchAll(/^[ \t•*\-]*(?:job |work |role )?locations?\s*:\s*(.{2,160})$/gim)].map((m) =>
+    m[1].trim()
+  );
+}
+
+/** A description line restricts to elsewhere only when it names a place outside
+ *  Brazil and nothing that opens it (LATAM, "international", "global"...). */
+export function lineRestrictsElsewhere(value: string): boolean {
+  const p = pad(value);
+  if (firstOf(p, cfg.LATAM_LOCATIONS)) return false;
+  if (firstOf(p, cfg.OPEN_LOCATION_WORDS)) return false;
+  return Boolean(firstOf(p, cfg.NON_BRAZIL_PLACES));
+}
+
 export function judgeLatam(job: Pick<DiscoveredJob, "title" | "locationRaw" | "hints">, description: string): LatamRuleVerdict {
   // Negatives always win, wherever they appear.
   const negative = negativeTermIn(`${job.title}\n${job.locationRaw}\n${description}`);
@@ -86,7 +103,20 @@ export function judgeLatam(job: Pick<DiscoveredJob, "title" | "locationRaw" | "h
   ].filter(Boolean);
 
   const latam = values.find((v) => classifyLocation(v) === "latam");
+
+  // The posting's own "Locations: Remote - US" beats a region the company
+  // ticked on the job board ("Anywhere in the World"). If it contradicts a
+  // structured LATAM field instead, the LLM reads the whole text and decides.
+  const lines = descriptionLocations(description);
+  const restricting = lines.filter(lineRestrictsElsewhere);
+  if (lines.length > 0 && restricting.length === lines.length) {
+    if (latam) return { bucket: "ambiguous" };
+    return { bucket: "discarded", evidence: `Location: ${restricting.join("; ")}` };
+  }
+  const latamLine = lines.find((l) => classifyLocation(l) === "latam");
+
   if (latam) return { bucket: "confirmed", evidence: `localização: ${latam}` };
+  if (latamLine) return { bucket: "confirmed", evidence: `Location: ${latamLine}` };
 
   const countries = hintValues(job.hints, "country").map(foldText);
   const brazil = countries.find((c) => cfg.BRAZIL_COUNTRY_CODES.includes(c) || c === "brazil" || c === "brasil");

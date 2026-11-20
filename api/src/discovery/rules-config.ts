@@ -17,6 +17,35 @@ export const AREA_HARD_EXCLUDE = [
   "process engineer", "manufacturing", "hvac", "nurse", "physician", "pharmacist",
   "therapist", "dentist", "driver", "warehouse", "mechanic", "unreal", "unreal engine",
   "game engine", "obras",
+  // Sales roles that borrow a technical noun ("desenvolvedor" wins otherwise).
+  "desenvolvedor de negocios", "desenvolvedora de negocios", "business developer",
+  "business development", "desarrollador de negocios",
+  // Talent-pool postings: no role, no work to judge.
+  "dont see what you are looking for", "don t see what you are looking for", "dont see what youre looking for",
+  "general application", "general applications", "talent pool", "talent community", "open application",
+  "join our talent", "future opportunities", "spontaneous application", "candidatura espontanea", "banco de talentos",
+];
+
+/** Places outside Brazil, for "Location:" lines inside a description. Those
+ *  lines are less reliable than a structured field ("Location: About us"), so
+ *  they only discard when they name one of these and nothing open. */
+export const NON_BRAZIL_PLACES = [
+  "us", "usa", "u s", "united states", "america", "canada", "mexico", "north america",
+  "uk", "united kingdom", "england", "london", "ireland", "europe", "eu", "emea", "portugal",
+  "spain", "france", "germany", "italy", "netherlands", "poland", "romania", "ukraine",
+  "switzerland", "sweden", "denmark", "norway", "finland", "austria", "belgium", "czech",
+  "india", "pakistan", "philippines", "singapore", "japan", "china", "korea", "vietnam",
+  "indonesia", "malaysia", "thailand", "australia", "new zealand", "apac", "asia", "africa",
+  "nigeria", "kenya", "south africa", "egypt", "israel", "uae", "dubai", "turkey",
+  "san francisco", "new york", "nyc", "seattle", "austin", "boston", "chicago", "los angeles",
+  "california", "texas", "florida", "washington", "pacific",
+  "argentina", "colombia", "chile", "uruguay", "peru",
+];
+
+/** Words that keep a description location line open to anyone. */
+export const OPEN_LOCATION_WORDS = [
+  "international", "global", "globally", "worldwide", "anywhere", "any country", "any location",
+  "everywhere", "all countries",
 ];
 
 /** Core technical nouns. A title with one of these is in even when it also

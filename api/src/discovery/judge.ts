@@ -11,6 +11,8 @@ import { classifyLocation } from "./rules";
 // ── Output contract ──────────────────────────────────────────────────────
 
 export const JudgementSchema = z.object({
+  /** False for work outside software, data or AI (sales, health, support...). */
+  is_tech_role: z.boolean(),
   latam: z.enum(["sim", "provavel", "nao"]),
   contract_type: z.enum(["contractor", "eor", "full_time_local", "desconhecido"]),
   timezone_requirement: z.string().max(200).nullable(),
@@ -31,6 +33,7 @@ const ITEM_SCHEMA = {
   type: "object",
   properties: {
     id: { type: "string" },
+    is_tech_role: { type: "boolean" },
     latam: { type: "string", enum: ["sim", "provavel", "nao"] },
     evidence: { type: "string", nullable: true },
     contract_type: { type: "string", enum: ["contractor", "eor", "full_time_local", "desconhecido"] },
@@ -38,8 +41,8 @@ const ITEM_SCHEMA = {
     score: { type: "integer" },
     reason: { type: "string" },
   },
-  required: ["id", "latam", "evidence", "contract_type", "timezone_requirement", "score", "reason"],
-  propertyOrdering: ["id", "latam", "evidence", "contract_type", "timezone_requirement", "score", "reason"],
+  required: ["id", "is_tech_role", "latam", "evidence", "contract_type", "timezone_requirement", "score", "reason"],
+  propertyOrdering: ["id", "is_tech_role", "latam", "evidence", "contract_type", "timezone_requirement", "score", "reason"],
 };
 
 /** Same contract in the JSON Schema subset Gemini's responseSchema accepts. */
@@ -57,11 +60,13 @@ const MAX_DESCRIPTION_CHARS = 7_000;
 const INSTRUCTIONS = `You screen remote job postings for one candidate. Judge each posting on its own, and return one entry per posting in "results", with the posting's id.
 
 For each posting:
+0. is_tech_role: true only if the job itself is software, data, AI or technical IT work (AI evaluation and RLHF count). Sales, marketing, health, coaching, support without engineering, operations and talent-pool postings with no specific role are false.
 1. latam: can someone living in Brazil be hired for this job?
    - "sim": the posting explicitly opens it to Brazil, LATAM, Latin/South America, the Americas, or anywhere in the world, with nothing contradicting it.
    - "nao": the posting restricts it to a place that excludes Brazil (a country, region or work authorization).
    - "provavel": the posting does not say either way.
    Timezone or working-hours requirements alone are NOT location restrictions: the candidate accepts any timezone.
+   A line about THIS role ("Location: Remote - US", "must live in Canada") beats a general statement about the company ("many of our roles can be done from anywhere"). Never answer "sim" from a company-wide sentence when the role's own location line restricts it.
 2. evidence: copy, character for character, the shortest sentence or phrase from THAT posting (title, location field or description) that says WHERE the hired person may live or work. It must be a literal substring: no paraphrase, no translation, no ellipsis, no labels like "Location field:". A sentence about the company's market or customers is not evidence. Use null only when latam is "provavel".
 3. contract_type: "contractor" (independent contractor / B2B / PJ), "eor" (hired through an employer of record), "full_time_local" (employee of a local entity), or "desconhecido".
 4. timezone_requirement: the hours or timezone overlap the job asks for, short, or null.
@@ -214,6 +219,20 @@ export function applyJudgement(job: DiscoveredJob, description: string, raw: unk
   if (job.latam?.negativeTerm) {
     // Defensive: layer 1 discarded it; nothing the model says lifts that.
     return { ok: true, job: { ...job, llmStatus: "not_needed" } };
+  }
+
+  if (!out.is_tech_role) {
+    // The area pre-filter let it through on a source category or a loose title;
+    // the model read the text and found no technical work.
+    const next: DiscoveredJob = {
+      ...job,
+      llmStatus: "done",
+      discardReason: `área (LLM): ${twoLines(out.reason).replace(/\n/g, " ")}`,
+    };
+    delete next.score;
+    delete next.scoreReason;
+    delete next.reviewReason;
+    return { ok: true, job: next };
   }
 
   const evidence = out.evidence ? stripLabel(out.evidence).trim() || null : null;
