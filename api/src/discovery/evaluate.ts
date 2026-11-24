@@ -8,7 +8,7 @@ import {
   type DiscoveredJob,
   type JobDescription,
 } from "./model";
-import { evaluateRules, type RuleOutcome } from "./rules";
+import { blockedCompany, evaluateRules, type RuleOutcome } from "./rules";
 import { discardJob, type KeyValueStore } from "./store";
 
 /** Writes a rule outcome onto the job. Pure: the caller persists. */
@@ -121,4 +121,20 @@ export async function evaluatePending(
   }
 
   return { ...stats, jobs: out };
+}
+
+/**
+ * Deletes stored jobs of blocked companies (promoted ones stay: they are
+ * applications already). Rule evaluation only sees new or changed jobs, so
+ * without this sweep a company added to the blocklist would linger until its
+ * jobs expire.
+ */
+export async function purgeBlocked(store: KeyValueStore, jobs: DiscoveredJob[], now = new Date()): Promise<number> {
+  let purged = 0;
+  for (const job of jobs) {
+    if (job.triage === "promoted" || !blockedCompany(job.company)) continue;
+    await discardJob(store, job.jobKey, now);
+    purged++;
+  }
+  return purged;
 }

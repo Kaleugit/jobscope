@@ -219,6 +219,12 @@ export function isAgency(company: string, description: string, tags: string[]): 
   return Boolean(firstOf(pad(description), cfg.AGENCY_PHRASES));
 }
 
+/** The owner's blocklist: the job is discarded whatever else it says. */
+export function blockedCompany(company: string): string | undefined {
+  const name = ` ${normalizeCompany(company)} `;
+  return cfg.BLOCKED_COMPANIES.find((b) => name.includes(` ${foldText(b)} `));
+}
+
 // ── All together ─────────────────────────────────────────────────────────
 
 export interface RuleOutcome {
@@ -245,8 +251,11 @@ export function evaluateRules(
   const barrier = judgeBarrier(job, description, ownerYears);
   const localMarket = isLocalMarket(job.title, description, job.salary);
   const agency = isAgency(job.company, description, job.tags);
+  const blocked = blockedCompany(job.company);
 
-  const discardReason = !area.ok
+  const discardReason = blocked
+    ? `Empresa bloqueada: ${blocked}`
+    : !area.ok
     ? area.reason
     : notRemote
       ? notRemote

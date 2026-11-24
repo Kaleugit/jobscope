@@ -12,10 +12,11 @@ import { DeleteCommand, PutCommand } from "@aws-sdk/lib-dynamodb";
 import { ddb, TABLE_NAME } from "../lib/db";
 import { ensureVerifiedRecipient, sendAlerts } from "../discovery/alerts";
 import { buildSources, collect } from "../discovery/collect";
-import { evaluatePending } from "../discovery/evaluate";
+import { evaluatePending, purgeBlocked } from "../discovery/evaluate";
 import { geminiConfigFromEnv, geminiGenerateJson } from "../discovery/gemini";
-import type { DiscoveredJob, Run } from "../discovery/model";
+import { RETENTION_MS, type DiscoveredJob, type Run } from "../discovery/model";
 import { getSettings, SCORE_WINDOW_MS, scorePending, type ScoreStats } from "../discovery/score";
+import { blockedCompany } from "../discovery/rules";
 import { dynamoStore } from "../discovery/store";
 
 const LOCK_KEY = { pk: "DISC#LOCK", sk: "RUN" };
@@ -74,7 +75,12 @@ async function runDiscovery(event: DiscoveryEvent, started: number, context?: { 
   // 3. Deterministic filters on new or changed jobs. Also picks up recent jobs
   // a previous run left unjudged if it died midway.
   const unjudged = new Map<string, DiscoveredJob>(touchedJobs.map((j) => [j.jobKey, j]));
-  for (const job of await store.recentJobs(new Date(started - SCORE_WINDOW_MS))) {
+  const recent = await store.recentJobs(new Date(started - RETENTION_MS));
+  const purged = await purgeBlocked(store, recent);
+  if (purged) log("purgedBlocked", { purged });
+  const scoreSince = new Date(started - SCORE_WINDOW_MS).toISOString();
+  for (const job of recent) {
+    if (job.gsi1sk < scoreSince || blockedCompany(job.company)) continue;
     if (job.needsEvaluation && !unjudged.has(job.jobKey)) unjudged.set(job.jobKey, job);
   }
   const evaluated = await evaluatePending(store, [...unjudged.values()], settings.ownerYears);

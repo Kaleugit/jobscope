@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { applyRuleOutcome, evaluatePending } from "../src/discovery/evaluate";
+import { applyRuleOutcome, evaluatePending, purgeBlocked } from "../src/discovery/evaluate";
 import type { Company, DiscoveredJob } from "../src/discovery/model";
 import {
+  blockedCompany,
   classifyLocation,
   evaluateRules,
   isAgency,
@@ -238,6 +239,22 @@ describe("Local Market and Agency", () => {
   });
 });
 
+describe("Blocked companies", () => {
+  it("matches micro1 by normalized name, not by substring", () => {
+    expect(blockedCompany("micro1")).toBe("micro1");
+    expect(blockedCompany("Micro1, Inc.")).toBe("micro1");
+    expect(blockedCompany("Micro1 AI")).toBe("micro1");
+    expect(blockedCompany("Micro10 Labs")).toBeUndefined();
+    expect(blockedCompany("Acme")).toBeUndefined();
+  });
+
+  it("discards a blocked company's job before any other filter", () => {
+    const r = evaluateRules(job({ company: "micro1", title: "Senior Account Executive" }), "", 3);
+    expect(r.discardReason).toBe("Empresa bloqueada: micro1");
+    expect(r.needsLlm).toBe(false);
+  });
+});
+
 describe("whole outcome", () => {
   it("the first filter that fires is the discard reason", () => {
     const r = evaluateRules(job({ title: "Senior Account Executive" }), "", 3);
@@ -306,5 +323,21 @@ describe("evaluatePending", () => {
     const fingerprint = get("DISC#GONE", "k9");
     expect(fingerprint).toBeDefined();
     expect(Object.keys(fingerprint!).sort()).toEqual(["pk", "sk", "ttl"]);
+  });
+});
+
+describe("purgeBlocked", () => {
+  it("deletes stored jobs of blocked companies and keeps promoted ones", async () => {
+    const { store, items } = memoryStore();
+    const stored = (sk: string, company: string, triage = "new") =>
+      ({ pk: "DISC#JOB", sk, jobKey: sk, company, triage, publishedAt: "2026-11-20" }) as unknown as DiscoveredJob;
+    const jobs = [stored("a", "micro1"), stored("b", "Acme"), stored("c", "Micro1", "promoted")];
+    for (const j of jobs) await store.put(j);
+
+    expect(await purgeBlocked(store, jobs)).toBe(1);
+    expect(items.has("DISC#JOB|a")).toBe(false);
+    expect(items.has("DISC#GONE|a")).toBe(true);
+    expect(items.has("DISC#JOB|b")).toBe(true);
+    expect(items.has("DISC#JOB|c")).toBe(true);
   });
 });

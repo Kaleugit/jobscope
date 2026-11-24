@@ -214,3 +214,12 @@ export const AGENCY_COMPANIES = [
   "bluelight", "wizeline", "globant", "ciklum", "epam", "endava", "encora", "nearsure",
   "distillery", "xperteez technology",
 ];
+
+// ── Blocked ──────────────────────────────────────────────────────────────
+
+/**
+ * Companies the owner never wants to see, by normalized name. Unlike an
+ * agency (only flagged), a blocked company's job is discarded outright, and
+ * the ones already stored are swept out on the next run.
+ */
+export const BLOCKED_COMPANIES = ["micro1"];
