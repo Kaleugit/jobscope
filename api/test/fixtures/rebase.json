@@ -1,0 +1,174 @@
+{
+ "data": [
+  {
+   "slug": "senior-backend-developer-python-ai-brazil-578aa3ae-20b6-4a46-b7e9-76d46fdbae32",
+   "title": "Senior Backend Developer (Python/AI), Brazil",
+   "company": {
+    "name": "CI&T",
+    "slug": "ci-t"
+   },
+   "location": "Brazil",
+   "hires_in_brazil": "yes",
+   "decidido_pela_curadoria": false,
+   "remote": true,
+   "work_mode": "remote",
+   "remoto_comprovado": true,
+   "seniority": "sênior",
+   "skills": [
+    "python",
+    "ci-cd",
+    "postgres",
+    "microservices",
+    "distributed-systems",
+    "rest-api",
+    "devops",
+    "ai-assisted-dev",
+    "testing"
+   ],
+   "skills_no_titulo": [
+    "python"
+   ],
+   "skills_principais": [
+    "python",
+    "ci-cd",
+    "postgres",
+    "microservices",
+    "distributed-systems",
+    "rest-api",
+    "devops",
+    "ai-assisted-dev",
+    "testing"
+   ],
+   "skills_diferenciais": [],
+   "hiring_models": [
+    "clt"
+   ],
+   "salary": null,
+   "salary_min": null,
+   "salary_max": null,
+   "salary_currency": null,
+   "salary_interval": null,
+   "published_at": "2026-11-17T16:12:53.668+00:00",
+   "first_seen_at": "2026-11-17T21:01:33.029+00:00",
+   "apply_url": "https://jobs.lever.co/ciandt/578aa3ae-20b6-4a46-b7e9-76d46fdbae32/apply",
+   "url": "https://rebasedev.com.br/jobs/senior-backend-developer-python-ai-brazil-578aa3ae-20b6-4a46-b7e9-76d46fdbae32",
+   "description": "At CI&T, we help large enterprises transform the potential of AI into real business impact with AI Deployment, AI-native execution, and tech-integrated business solutions.\nWith 30 years of experience in technological transformation, we accelerate innovation with expertise in Agentic SDLC, Application modernization, Data & AI, Martech and Business strategy.\nWe are 8,000 CI&Ters across more than 25 ",
+   "closed_at": null,
+   "tambem_publicada": [],
+   "oculta": false
+  },
+  {
+   "slug": "senior-full-stack-engineer-dc8411b5-970b-4532-aae3-bb08fbc59527",
+   "title": "Senior Full-Stack Engineer",
+   "company": {
+    "name": "Ascertain",
+    "slug": "ascertain"
+   },
+   "location": "Remote",
+   "hires_in_brazil": "yes",
+   "decidido_pela_curadoria": false,
+   "remote": true,
+   "work_mode": "remote",
+   "remoto_comprovado": true,
+   "seniority": "sênior",
+   "skills": [
+    "typescript",
+    "python",
+    "sql",
+    "react",
+    "gcp",
+    "docker",
+    "terraform",
+    "ci-cd",
+    "postgres",
+    "redis",
+    "observability",
+    "llm"
+   ],
+   "skills_no_titulo": [],
+   "skills_principais": [
+    "typescript",
+    "python",
+    "sql",
+    "react",
+    "gcp",
+    "docker",
+    "ci-cd",
+    "postgres",
+    "redis",
+    "observability"
+   ],
+   "skills_diferenciais": [
+    "terraform"
+   ],
+   "hiring_models": [],
+   "salary": "US$ 175K – US$ 200K por ano",
+   "salary_min": 175000,
+   "salary_max": 200000,
+   "salary_currency": "USD",
+   "salary_interval": "YEAR",
+   "published_at": "2026-11-16T17:58:21.037+00:00",
+   "first_seen_at": "2026-11-16T21:02:28.489+00:00",
+   "apply_url": "https://jobs.ashbyhq.com/ascertain/dc8411b5-970b-4532-aae3-bb08fbc59527/application",
+   "url": "https://rebasedev.com.br/jobs/senior-full-stack-engineer-dc8411b5-970b-4532-aae3-bb08fbc59527",
+   "description": "MEET ASCERTAIN\n\nAscertain is building AI agents to automate the administrative work that burdens care teams. We are in major health systems and large specialty groups, saving hundreds of staff hours every week.\n\nOur backers include Northwell Health, New York’s largest health system, and Deerfield Management, a leading healthcare investment firm.\n\nTogether, we’re on a mission to restore time, trust",
+   "closed_at": null,
+   "tambem_publicada": [],
+   "oculta": false
+  },
+  {
+   "slug": "production-support-engineer-8294d040-167e-4547-aa36-8c043acd6b8b",
+   "title": "Production Support Engineer",
+   "company": {
+    "name": "Solvd",
+    "slug": "solvd"
+   },
+   "location": "Argentina; Brazil; Colombia",
+   "hires_in_brazil": "yes",
+   "decidido_pela_curadoria": false,
+   "remote": true,
+   "work_mode": "remote",
+   "remoto_comprovado": true,
+   "seniority": null,
+   "skills": [
+    "sql",
+    "html-css",
+    "aws",
+    "terraform",
+    "observability"
+   ],
+   "skills_no_titulo": [],
+   "skills_principais": [
+    "sql",
+    "html-css",
+    "observability"
+   ],
+   "skills_diferenciais": [
+    "aws",
+    "terraform"
+   ],
+   "hiring_models": [],
+   "salary": null,
+   "salary_min": null,
+   "salary_max": null,
+   "salary_currency": null,
+   "salary_interval": null,
+   "published_at": "2026-11-17T15:40:52.201+00:00",
+   "first_seen_at": "2026-11-17T21:03:15.754+00:00",
+   "apply_url": "https://jobs.ashbyhq.com/Solvd/8294d040-167e-4547-aa36-8c043acd6b8b/application",
+   "url": "https://rebasedev.com.br/jobs/production-support-engineer-8294d040-167e-4547-aa36-8c043acd6b8b",
+   "description": "Solvd Inc. is a rapidly growing AI-native consulting and technology services firm delivering enterprise transformation across cloud, data, software engineering, and artificial intelligence. We work with industry-leading organizations to design, build, and operationalize technology solutions that drive measurable business outcomes.\n\nFollowing the acquisition of Tooploox, a premier AI and product de",
+   "closed_at": null,
+   "tambem_publicada": [],
+   "oculta": false
+  }
+ ],
+ "meta": {
+  "total": 670,
+  "pagina": 2,
+  "paginas": 14,
+  "por_pagina": 50,
+  "previa": false,
+  "mostrando": 3
+ }
+}

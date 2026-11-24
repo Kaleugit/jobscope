@@ -9,7 +9,7 @@ Painel privado em `#/discovery`, visível só para a conta master. Coleta vagas 
 ## Em produção (último deploy: `8d9399f`, CI verde)
 
 - **Coleta agendada** às 07:00 e 13:00, de segunda a sexta, America/Sao_Paulo (EventBridge Scheduler → `DiscoveryFn`, 15 min de teto, trava no DynamoDB em `DISC#LOCK`).
-- **Fontes:** Himalayas (`/jobs/api/search?country=Brazil`, chave em `HIMALAYAS_API_KEY`), Remotive, Remote OK e os ATS da tabela de empresas (Greenhouse, Lever, Ashby). O **We Work Remotely saiu** em `8d9399f`: ver "Decisões pendentes".
+- **Fontes:** Himalayas (`/jobs/api/search?country=Brazil`, chave em `HIMALAYAS_API_KEY`), Remotive, Remote OK, Rebase Jobs (token em `REBASE_API_TOKEN`), 4 Day Week e os ATS da tabela de empresas (Greenhouse, Lever, Ashby). O **We Work Remotely saiu** em `8d9399f`: ver "Decisões pendentes".
 - **Pipeline** (`api/src/handlers/discovery.ts`): coleta → upsert/dedup (`store.ts`, `merge.ts`) → regras (`rules.ts`, vocabulário em `rules-config.ts`) → Gemini em lotes de 8 (`score.ts`, `judge.ts`, `gemini.ts`) → alerta SES (`alerts.ts`).
 - **Gemini:** modelo próprio `gemini-3.5-flash-lite`, `thinkingLevel: low`, até 15 chamadas por coleta. A demo usa `gemini-3.6-flash` (20 req/dia no gratuito, por projeto): **nunca calibrar com o modelo da demo**.
 - **Retenção (TTL ligado na tabela, atributo `ttl`):** descartada é apagada na hora e deixa só uma Impressão Digital (`DISC#GONE`, ~100 bytes, 30 dias); não decidida expira 30 dias após a publicação; promovida fica para sempre. Nenhuma etapa lê a tabela inteira: tudo passa pelo índice `gsi1` (por data de publicação).
@@ -41,38 +41,33 @@ Nada disso foi investigado ainda. Pontos de partida:
    - permissão `deny` de escrita em `base/**`, porque o perfil-mestre nunca é editado;
    - sempre um currículo novo, com a nomenclatura do LATAM CV Maker.
 
-## Fontes candidatas (lista do dono, 2026-11-20, ainda não estudadas)
+## Fontes candidatas (estudadas em 2026-11-24)
 
-O dono mandou estes sites para estudar e, depois, decidir se entram na busca. Nada foi pesquisado ainda. A descrição de cada um é a que veio com a lista, não foi verificada.
+Entraram duas fontes:
+- **Rebase Jobs** (`sources/rebase.ts`): catálogo curado de vagas de dev em empresa de fora que contrata quem mora no Brasil, lido dos sites de carreira das empresas duas vezes por dia. `GET /api/v1/agent/jobs` traz o anúncio inteiro e o `apply_url` direto do ATS. Pede o token pessoal do dono (`REBASE_API_TOKEN`, segredo do GitHub → env da Lambda). Sem token a fonte devolve vazio. Limite de 60 chamadas por minuto e 50 vagas por página. O `hires_in_brazil: yes` vira a dica `country:brazil`. Também tem MCP em `https://rebasedev.com.br/mcp`, com OAuth ou o mesmo token.
+- **4 Day Week** (`sources/fourdayweek.ts`): API v2 pública, sem chave, liberada no robots.txt, com `country=Brazil&work_arrangement=remote`. A API não dá mais o link de candidatura (`apply_url removed`) e a página da vaga o esconde de quem não está logado. Para o Brasil, quase nenhuma vaga é de semana de 4 dias de verdade.
+- As duas olham 3 dias além do `since`: o 4 Day Week avisa que uma vaga pode levar até 48h para aparecer na API, e a Rebase data a vaga pela data do ATS.
 
-| # | Site | Como foi descrito | Situação hoje |
-|---|---|---|---|
-| 1 | Remotar, remotar.com.br | plataforma brasileira só de vagas 100% remotas, com salário declarado | não usado |
-| 2 | Wellfound, wellfound.com | vagas em startups, com salário, equity e benefícios visíveis | não usado |
-| 3 | Himalayas, himalayas.app | vagas remotas com faixa salarial em USD ou EUR, verificadas | **já é fonte** (maior volume e suspeita de slop) |
-| 4 | Remote OK, remoteok.com | filtro por salário mínimo e benefícios | **já é fonte** |
-| 5 | We Work Remotely, weworkremotely.com | grande plataforma de vagas remotas com remuneração | **removido** em `8d9399f` (apply travado por premium, anti-robô) |
-| 6 | Jobgether, jobgether.com | anúncio completo: salário, modelo, localização, benefícios | não usado |
-| 7 | 4 Day Week, 4dayweek.io | semana de 4 dias com 100% do salário, empresas verificadas | não usado |
-| 8 | Flexa Careers, flexa.careers | empresas com flexibilidade auditada | não usado |
-| 9 | EuropeRemotely, europeremotely.com | vagas europeias, salário em EUR no título | não usado (o foco é quem pode contratar no Brasil) |
-| 10 | Otta, otta.com | empresas em crescimento, benefícios declarados | não usado (hoje parte do Welcome to the Jungle, a confirmar) |
-| 11 | Cord, cord.co | vagas de tecnologia com salário obrigatório e contato direto com o time | não usado |
-| 12 | Just Remote, justremote.co | só vagas 100% remotas | não usado |
+Ficaram de fora:
+| Site | Motivo |
+|---|---|
+| Remotar | Tem API JSON aberta (`api.remotar.com.br/jobs`) com link direto do ATS, mas os termos de uso proíbem cópia por robô/crawler. Só entra com autorização escrita deles. |
+| Jobgether | A API é pública, mas o `url` é a página do próprio Jobgether (intermediário), a página dá 403 para robô e a listagem vem sem o texto do anúncio. |
+| Wellfound | Não tem API, e o robots.txt bloqueia a busca. |
+| EuropeRemotely | O robots.txt dá `Disallow: /` para todos, e a página responde 403. |
+| Just Remote | Só tem HTML, e as vagas "escondidas" ficam atrás de pagamento. |
+| Flexa | Não tem API, e as vagas são do Reino Unido. |
+| Otta | Virou o Welcome to the Jungle. Não tem API. |
+| Cord | Virou um agente de busca que exige conta. |
 
-**O que estudar em cada um antes de implementar:**
-- Tem API pública, RSS ou feed? Exige chave ou conta?
-- Os termos permitem uso automatizado? Há proteção anti-robô (como a Cloudflare do WWR)? Não contornar nenhuma.
-- O botão de aplicar leva direto ao ATS da empresa, ou passa por cadastro ou assinatura paga? Esse é o filtro que derrubou o WWR.
-- Diz se a vaga aceita Brasil/LATAM, em campo estruturado?
-- O quanto repete vagas de outras fontes, e o quanto é revenda de vaga ("slop", ver acima).
+## Empresas bloqueadas
 
-Ordem sugerida: primeiro as que podem trazer vaga direta e com campo de país (Remotar, Wellfound, Jobgether, 4 Day Week); por último as de foco europeu.
+`BLOCKED_COMPANIES` em `rules-config.ts` (hoje só a `micro1`, a pedido do dono em 2026-11-24). Diferente de `AGENCY_COMPANIES`, que só marca a vaga, a empresa bloqueada tem a vaga descartada antes de qualquer outro filtro. Além disso, a cada coleta `purgeBlocked` apaga as vagas já guardadas nos últimos 30 dias, menos as promovidas.
 
 ## Como operar
 
 - **Rodar uma coleta agora:** botão "run now" na aba runs, ou `aws lambda invoke --function-name JobscopeStack-DiscoveryFnEFFCFFEF-MvuKpvcsrEjK --payload '{"trigger":"manual"}' --cli-binary-format raw-in-base64-out out.json` (us-east-1).
-- **Testar as fontes sem tocar no banco:** `HIMALAYAS_API_KEY=... npx tsx api/scripts/collect-dry-run.ts`.
+- **Testar as fontes sem tocar no banco:** `HIMALAYAS_API_KEY=... REBASE_API_TOKEN=... npx tsx api/scripts/collect-dry-run.ts`.
 - **Gravar o perfil ou o e-mail por script:** `TABLE_NAME=... npx tsx api/scripts/put-settings.ts --profile <arquivo fora do repo>`.
 - **Chaves locais:** `.env` na raiz (ignorado pelo git). `GEMINI_API_KEY` foi lida da Lambda `AnalyzeFn`.
 - **Push na `main` faz deploy** (GitHub Actions + OIDC, com typecheck e testes antes).

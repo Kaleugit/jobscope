@@ -1,5 +1,7 @@
 import { atsSource } from "./sources/ats";
+import { fourDayWeek } from "./sources/fourdayweek";
 import { himalayas } from "./sources/himalayas";
+import { rebase } from "./sources/rebase";
 import { remoteOk } from "./sources/remoteok";
 import { remotive } from "./sources/remotive";
 import { DISC_RUN_PK, type DiscoveredJob, type Run, type Source, type SourceRunLog } from "./model";
@@ -16,6 +18,8 @@ export async function buildSources(store: KeyValueStore): Promise<Source[]> {
     himalayas(process.env.HIMALAYAS_API_KEY || undefined),
     remotive(),
     remoteOk(),
+    rebase(process.env.REBASE_API_TOKEN || undefined),
+    fourDayWeek(),
     ...companies.map(atsSource),
   ];
 }

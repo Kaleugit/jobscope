@@ -47,4 +47,5 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           TOKEN_SECRET: ${{ secrets.TOKEN_SECRET }}
           HIMALAYAS_API_KEY: ${{ secrets.HIMALAYAS_API_KEY }}
+          REBASE_API_TOKEN: ${{ secrets.REBASE_API_TOKEN }}
         run: npx cdk deploy --require-approval never

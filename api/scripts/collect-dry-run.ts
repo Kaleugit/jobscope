@@ -1,7 +1,7 @@
 // Runs a real collection against every live source, storing into memory only.
 // Nothing is written to DynamoDB. Useful to check a source after its API changes.
 //
-//   HIMALAYAS_API_KEY=... npx tsx api/scripts/collect-dry-run.ts
+//   HIMALAYAS_API_KEY=... REBASE_API_TOKEN=... npx tsx api/scripts/collect-dry-run.ts
 
 import { collect } from "../src/discovery/collect";
 import { COMPANIES_SEED } from "../src/discovery/companies-seed";
@@ -9,6 +9,8 @@ import { himalayas } from "../src/discovery/sources/himalayas";
 import { remotive } from "../src/discovery/sources/remotive";
 import { remoteOk } from "../src/discovery/sources/remoteok";
 import { atsSource } from "../src/discovery/sources/ats";
+import { fourDayWeek } from "../src/discovery/sources/fourdayweek";
+import { rebase } from "../src/discovery/sources/rebase";
 import { DISC_JOB_PK, type DiscoveredJob, type Run } from "../src/discovery/model";
 import { memoryStore } from "../src/discovery/memory-store";
 
@@ -19,6 +21,8 @@ async function main() {
     himalayas(process.env.HIMALAYAS_API_KEY || undefined),
     remotive(),
     remoteOk(),
+    rebase(process.env.REBASE_API_TOKEN || undefined),
+    fourDayWeek(),
     ...COMPANIES_SEED.map(atsSource),
   ];
   const started = Date.now();

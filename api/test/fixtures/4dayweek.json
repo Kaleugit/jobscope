@@ -1,0 +1,381 @@
+{
+ "data": [
+  {
+   "id": "01a1fabb-dc35-7e1b-b8d1-0129cf9083e4",
+   "slug": "senior-solutions-architect-application-modernisation-at-mongodb-08cdcde9",
+   "title": "Senior Solutions Architect - Application Modernisation",
+   "description": "#### AMP Solutions Architect\n\nMongoDB’s mission is to empower innovators to create, transform, and disrupt industries by unleashing the power of software and data. We enable organizations of all sizes to easily build, scale, and run modern applications by helping them modernize legacy workloads, embrace innovation, and unleash AI. Our industry-leading developer data platform, MongoDB Atlas, is the",
+   "url": "https://4dayweek.io/job/senior-solutions-architect-application-modernisation-at-mongodb-08cdcde9",
+   "category": "engineering",
+   "role": "Solutions Architect",
+   "level": "senior",
+   "schedule_type": "generous_parental_leave",
+   "hours_per_week_min": 40,
+   "hours_per_week_max": 40,
+   "work_arrangement": "remote",
+   "locations": [
+    {
+     "country": "Mexico",
+     "continent": "North America",
+     "latitude": 23.63,
+     "longitude": -102.55,
+     "work_arrangement": "remote",
+     "is_primary": true
+    },
+    {
+     "city": "Mexico City",
+     "country": "Mexico",
+     "continent": "North America",
+     "latitude": 19.42847,
+     "longitude": -99.12766,
+     "work_arrangement": "hybrid"
+    },
+    {
+     "country": "Brazil",
+     "continent": "South America",
+     "latitude": -14.24,
+     "longitude": -51.93,
+     "work_arrangement": "remote"
+    }
+   ],
+   "skills": [
+    {
+     "name": "Agile",
+     "slug": "agile"
+    },
+    {
+     "name": "Distributed Systems",
+     "slug": "distributed-systems"
+    },
+    {
+     "name": "Domain Driven Design",
+     "slug": "domain-driven-design"
+    },
+    {
+     "name": "Event-Driven Design",
+     "slug": "event-driven-design"
+    },
+    {
+     "name": "MEDDPICC",
+     "slug": "meddpicc"
+    },
+    {
+     "name": "Microservices",
+     "slug": "microservices"
+    },
+    {
+     "name": "Portuguese",
+     "slug": "portuguese"
+    },
+    {
+     "name": "Pre-sales",
+     "slug": "pre-sales"
+    },
+    {
+     "name": "Spanish",
+     "slug": "spanish"
+    },
+    {
+     "name": "Technical workshops",
+     "slug": "technical-workshops"
+    },
+    {
+     "name": "Test-Driven Dev",
+     "slug": "test-driven-dev"
+    }
+   ],
+   "stack": [
+    {
+     "name": "C#",
+     "slug": "csharp"
+    },
+    {
+     "name": "C/C++",
+     "slug": "c-cplusplus"
+    },
+    {
+     "name": "Docker",
+     "slug": "docker"
+    },
+    {
+     "name": "Java",
+     "slug": "java"
+    },
+    {
+     "name": "Node.js",
+     "slug": "nodejs"
+    },
+    {
+     "name": "Python",
+     "slug": "python"
+    },
+    {
+     "name": "SQL",
+     "slug": "sql"
+    }
+   ],
+   "tools": [
+    {
+     "name": "Claude Code",
+     "slug": "claude-code"
+    },
+    {
+     "name": "Cursor",
+     "slug": "cursor"
+    },
+    {
+     "name": "Devin",
+     "slug": "devin"
+    },
+    {
+     "name": "GitHub Copilot",
+     "slug": "github-copilot"
+    },
+    {
+     "name": "Github Codespaces",
+     "slug": "github-codespaces"
+    },
+    {
+     "name": "MongoDB Atlas",
+     "slug": "mongodb-atlas"
+    }
+   ],
+   "posted_at": "2026-11-20T20:52:58Z",
+   "company": {
+    "id": "019e74ae-12bc-7b15-8169-19a59034a8bc",
+    "slug": "mongodb",
+    "name": "MongoDB",
+    "url": "https://4dayweek.io/company/mongodb",
+    "website": "https://www.mongodb.com",
+    "logo_url": "https://media.4dayweek.io/files/1780305938280_0ca005d8c16e1acc.jpg",
+    "short_description": "US developer data platform (NASDAQ: MDB) behind the MongoDB document database, Atlas managed service, Compass, Realm + Vector Search. 20 weeks fully paid for ALL parents (mothers AND fathers, equal) after 1 year tenure, plus 4 weeks flexible return-to-work.",
+    "country": "United States",
+    "employees": 5600,
+    "schedule_type": "generous_parental_leave",
+    "hours_full_time": 40,
+    "remote_level": "hybrid",
+    "hires_worldwide": false
+   }
+  },
+  {
+   "id": "01a1f668-de71-795f-8019-2b73812c698e",
+   "slug": "junior-software-development-analyst-at-experian-99403ccd",
+   "title": "Junior Software Development Analyst",
+   "description": "#### Company Description\n\nExperian is a global data and technology company that drives opportunities for people and businesses around the world. We operate in several markets, such as financial services, healthcare, automotive, agribusiness, insurance, among others. Experian invests in people and in new advanced technologies to unleash the power of data. We have an incredible team of 25,200 employ",
+   "url": "https://4dayweek.io/job/junior-software-development-analyst-at-experian-99403ccd",
+   "category": "engineering",
+   "role": "Software Development Analyst",
+   "level": "entry",
+   "schedule_type": "best_place_to_work",
+   "hours_per_week_min": 40,
+   "hours_per_week_max": 40,
+   "work_arrangement": "remote",
+   "locations": [
+    {
+     "city": "São Carlos",
+     "state": "State of São Paulo",
+     "country": "Brazil",
+     "continent": "South America",
+     "latitude": -22.0123291,
+     "longitude": -47.8908261,
+     "work_arrangement": "remote",
+     "is_primary": true
+    }
+   ],
+   "skills": [
+    {
+     "name": "Agile",
+     "slug": "agile"
+    },
+    {
+     "name": "Object-oriented programming",
+     "slug": "object-oriented-programming"
+    },
+    {
+     "name": "Problem Solving",
+     "slug": "problem-solving"
+    },
+    {
+     "name": "REST APIs",
+     "slug": "rest-apis"
+    },
+    {
+     "name": "SQL",
+     "slug": "sql"
+    }
+   ],
+   "stack": [
+    {
+     "name": ".NET",
+     "slug": "net"
+    },
+    {
+     "name": "Java",
+     "slug": "java"
+    },
+    {
+     "name": "MongoDB",
+     "slug": "mongodb"
+    },
+    {
+     "name": "OutSystems",
+     "slug": "outsystems"
+    },
+    {
+     "name": "Spring Boot",
+     "slug": "spring-boot"
+    }
+   ],
+   "tools": [
+    {
+     "name": "AWS",
+     "slug": "aws"
+    },
+    {
+     "name": "Git",
+     "slug": "git"
+    },
+    {
+     "name": "Oracle",
+     "slug": "oracle"
+    },
+    {
+     "name": "SQL Server",
+     "slug": "sql-server"
+    }
+   ],
+   "posted_at": "2026-11-20T00:43:50Z",
+   "company": {
+    "id": "019e839d-ffc9-7533-bcf6-f0c9e5cd5047",
+    "slug": "experian",
+    "name": "Experian",
+    "url": "https://4dayweek.io/company/experian",
+    "website": "https://www.experian.com",
+    "logo_url": "https://media.4dayweek.io/files/1780321685700_5b5158c6c99c886e.jpg",
+    "short_description": "Global data, analytics and credit-reporting company.",
+    "country": "United States",
+    "employees": 23000,
+    "schedule_type": "best_place_to_work",
+    "hours_full_time": 40,
+    "remote_level": "hybrid",
+    "hires_worldwide": false
+   }
+  },
+  {
+   "id": "01a1f4be-553c-75a6-8504-cf9d763cee6d",
+   "slug": "software-engineer-contractor-at-introhive-86c85ac6",
+   "title": "Software Engineer Contractor",
+   "description": "About Introhive\n\nIntrohive is an AI-powered Relationship Intelligence platform that helps firms break down data silos and unlock actionable relationship insights that drive collaboration and growth.\n\nSince launching in 2012, we’ve grown significantly, but our mission remains the same: to transform how companies manage, nurture, and leverage relationships to unlock value, accelerate growth, and del",
+   "url": "https://4dayweek.io/job/software-engineer-contractor-at-introhive-86c85ac6",
+   "category": "engineering",
+   "role": "Software Engineer",
+   "level": "mid",
+   "contract_type": "contract",
+   "schedule_type": "best_place_to_work",
+   "hours_per_week_min": 40,
+   "hours_per_week_max": 40,
+   "work_arrangement": "remote",
+   "locations": [
+    {
+     "city": "São Paulo",
+     "country": "Brazil",
+     "continent": "South America",
+     "latitude": -23.5475,
+     "longitude": -46.63611,
+     "work_arrangement": "remote",
+     "is_primary": true
+    }
+   ],
+   "skills": [
+    {
+     "name": "Agile",
+     "slug": "agile"
+    },
+    {
+     "name": "Code Review",
+     "slug": "code-review"
+    },
+    {
+     "name": "Communication",
+     "slug": "communication"
+    },
+    {
+     "name": "Debugging",
+     "slug": "debugging"
+    },
+    {
+     "name": "REST API Design",
+     "slug": "rest-api-design"
+    },
+    {
+     "name": "Technical Design",
+     "slug": "technical-design"
+    }
+   ],
+   "stack": [
+    {
+     "name": "LangChain",
+     "slug": "langchain"
+    },
+    {
+     "name": "React",
+     "slug": "react"
+    },
+    {
+     "name": "Ruby on Rails",
+     "slug": "ruby-on-rails"
+    },
+    {
+     "name": "SQL",
+     "slug": "sql"
+    },
+    {
+     "name": "Snowflake",
+     "slug": "snowflake"
+    }
+   ],
+   "tools": [
+    {
+     "name": "AWS",
+     "slug": "aws"
+    },
+    {
+     "name": "Airflow",
+     "slug": "airflow"
+    },
+    {
+     "name": "Claude Code",
+     "slug": "claude-code"
+    },
+    {
+     "name": "DBT",
+     "slug": "dbt"
+    },
+    {
+     "name": "Git",
+     "slug": "git"
+    }
+   ],
+   "posted_at": "2026-11-19T16:57:57Z",
+   "company": {
+    "id": "019e8866-022b-7d4c-a42d-4384091bb58f",
+    "slug": "introhive",
+    "name": "Introhive",
+    "url": "https://4dayweek.io/company/introhive",
+    "website": "https://www.introhive.com",
+    "logo_url": "https://media.4dayweek.io/files/1780403957738_a4f716d66a9bd3aa.jpg",
+    "short_description": "Relationship-intelligence platform surfacing relationship and revenue insights.",
+    "country": "Canada",
+    "employees": 180,
+    "schedule_type": "best_place_to_work",
+    "hours_full_time": 40,
+    "remote_level": "hybrid",
+    "hires_worldwide": false
+   }
+  }
+ ],
+ "page": 1,
+ "limit": 100,
+ "total": 3,
+ "has_more": false
+}

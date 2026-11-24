@@ -126,6 +126,7 @@ export class JobscopeStack extends Stack {
       environment: {
         TABLE_NAME: table.tableName,
         HIMALAYAS_API_KEY: process.env.HIMALAYAS_API_KEY ?? "",
+        REBASE_API_TOKEN: process.env.REBASE_API_TOKEN ?? "",
         GEMINI_API_KEY: process.env.GEMINI_API_KEY ?? "",
         // Its own model: free-tier quotas are per model, so the demo keeps its quota.
         GEMINI_DISCOVERY_MODEL: process.env.GEMINI_DISCOVERY_MODEL ?? "gemini-3.5-flash-lite",
