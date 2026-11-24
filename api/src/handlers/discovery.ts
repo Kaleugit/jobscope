@@ -91,7 +91,7 @@ async function runDiscovery(event: DiscoveryEvent, started: number, context?: { 
   const scored: ScoreStats = config.apiKey
     ? await scorePending(store, geminiGenerateJson(config), config, { deadline })
     : { calls: 0, scored: 0, review: 0, discardedByLlm: 0, belowMinimum: 0, pending: 0, errors: ["GEMINI_API_KEY ausente"] };
-  log("scored", { ...scored, model: config.model });
+  log("scored", { ...scored, model: config.model, fallbackModel: config.fallbackModel });
 
   // 5. Alert: one e-mail at most. Verification runs every time, so a new
   // address gets its confirmation mail on the first run after it is set.

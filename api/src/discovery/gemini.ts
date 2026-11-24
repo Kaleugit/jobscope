@@ -7,6 +7,9 @@ import { sleep } from "./http";
 export interface GeminiConfig {
   apiKey: string;
   model: string;
+  /** Tried when the main model stays overloaded (5xx after the retries). Its
+   *  free quota is separate, so a busy main model does not stall scoring. */
+  fallbackModel?: string;
   /** Spacing between calls, to stay under the free tier's requests per minute. */
   intervalMs: number;
   /** Hard cap per run; what is left stays pending for the next run. */
@@ -22,11 +25,26 @@ export function geminiConfigFromEnv(): GeminiConfig {
     // model and never falls back to GEMINI_MODEL, so it cannot eat the daily
     // quota the public demo depends on.
     model: process.env.GEMINI_DISCOVERY_MODEL || "gemini-3.5-flash-lite",
+    fallbackModel: safeFallback(process.env.GEMINI_DISCOVERY_FALLBACK_MODEL ?? "gemini-3.5-flash"),
     intervalMs: Number(process.env.DISCOVERY_LLM_INTERVAL_MS ?? 10_000),
     // Each call scores a batch of 8 jobs.
     maxCalls: Number(process.env.DISCOVERY_MAX_LLM_CALLS ?? 15),
     thinkingLevel: process.env.DISCOVERY_THINKING_LEVEL || "low",
   };
+}
+
+/** Never the demo's model (GEMINI_MODEL): its 20 requests a day are the demo's. */
+function safeFallback(model: string): string | undefined {
+  const demo = process.env.GEMINI_MODEL || "gemini-3.6-flash";
+  return model && model !== demo ? model : undefined;
+}
+
+/** The model kept answering 5xx ("high demand") through every retry. */
+export class ModelOverloaded extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ModelOverloaded";
+  }
 }
 
 /** The daily quota is gone: stop calling for this run. */
@@ -65,49 +83,74 @@ export function parseQuotaError(body: string): { daily: boolean; limit?: string;
 
 export type GenerateJson =(prompt: string, schema: object) => Promise<string>;
 
-export function geminiGenerateJson(config: GeminiConfig): GenerateJson {
+/**
+ * Calls the main model; if it stays overloaded, the same request goes to the
+ * fallback. The fallback's own quota running out does not stop the run (the
+ * main model's quota is still there): the batch just stays pending.
+ */
+export function geminiGenerateJson(config: GeminiConfig, call = generateWithModel): GenerateJson {
   return async (prompt, schema) => {
-    if (!config.apiKey) throw new Error("GEMINI_API_KEY is not configured");
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(config.model)}:generateContent`;
-    const body = JSON.stringify({
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: 0,
-        responseMimeType: "application/json",
-        responseSchema: schema,
-        ...(config.thinkingLevel ? { thinkingConfig: { thinkingLevel: config.thinkingLevel } } : {}),
-      },
-    });
+    try {
+      return await call(config, config.model, prompt, schema);
+    } catch (error) {
+      if (!(error instanceof ModelOverloaded) || !config.fallbackModel) throw error;
+      try {
+        return await call(config, config.fallbackModel, prompt, schema);
+      } catch (fallbackError) {
+        if (fallbackError instanceof QuotaExhausted || fallbackError instanceof ModelOverloaded) {
+          throw new Error(`${error.message.slice(0, 120)} | reserva ${config.fallbackModel}: ${fallbackError.message.slice(0, 120)}`);
+        }
+        throw fallbackError;
+      }
+    }
+  };
+}
 
-    for (let attempt = 0; ; attempt++) {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-goog-api-key": config.apiKey },
-        body,
-        signal: AbortSignal.timeout(60_000),
-      });
-      if (res.ok) {
-        const data = (await res.json()) as {
-          candidates?: { content?: { parts?: { text?: string }[] } }[];
-        };
-        return data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
-      }
-      const text = await res.text();
-      if (res.status === 429) {
-        const quota = parseQuotaError(text);
-        // A per-day quota will not come back within this run; a per-minute one will.
-        if (quota.daily) throw new QuotaExhausted(`daily quota (${quota.limit ?? "?"}) exhausted for ${config.model}`);
-        if (attempt >= 4) throw new QuotaExhausted(`still rate limited after retries for ${config.model}`);
-        await sleep(Math.min(quota.retryMs ?? 10_000 * 2 ** attempt, 65_000));
-        continue;
-      }
-      if (res.status >= 500 && attempt < 2) {
+export async function generateWithModel(config: GeminiConfig, model: string, prompt: string, schema: object): Promise<string> {
+  if (!config.apiKey) throw new Error("GEMINI_API_KEY is not configured");
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+  const body = JSON.stringify({
+    contents: [{ role: "user", parts: [{ text: prompt }] }],
+    generationConfig: {
+      temperature: 0,
+      responseMimeType: "application/json",
+      responseSchema: schema,
+      ...(config.thinkingLevel ? { thinkingConfig: { thinkingLevel: config.thinkingLevel } } : {}),
+    },
+  });
+
+  for (let attempt = 0; ; attempt++) {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": config.apiKey },
+      body,
+      // The fallback (flash, not lite) took 28s on a tiny prompt under load.
+      signal: AbortSignal.timeout(90_000),
+    });
+    if (res.ok) {
+      const data = (await res.json()) as {
+        candidates?: { content?: { parts?: { text?: string }[] } }[];
+      };
+      return data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
+    }
+    const text = await res.text();
+    if (res.status === 429) {
+      const quota = parseQuotaError(text);
+      // A per-day quota will not come back within this run; a per-minute one will.
+      if (quota.daily) throw new QuotaExhausted(`daily quota (${quota.limit ?? "?"}) exhausted for ${model}`);
+      if (attempt >= 4) throw new QuotaExhausted(`still rate limited after retries for ${model}`);
+      await sleep(Math.min(quota.retryMs ?? 10_000 * 2 ** attempt, 65_000));
+      continue;
+    }
+    if (res.status >= 500) {
+      if (attempt < 2) {
         await sleep(5_000 * 2 ** attempt);
         continue;
       }
-      throw new Error(`Gemini API error ${res.status}: ${text.slice(0, 300)}`);
+      throw new ModelOverloaded(`Gemini API error ${res.status} (${model}): ${text.slice(0, 300)}`);
     }
-  };
+    throw new Error(`Gemini API error ${res.status}: ${text.slice(0, 300)}`);
+  }
 }
 
 export interface QueueResult<T> {

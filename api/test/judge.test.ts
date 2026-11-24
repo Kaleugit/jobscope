@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseQuotaError, QuotaExhausted, runQueue } from "../src/discovery/gemini";
+import { geminiGenerateJson, ModelOverloaded, parseQuotaError, QuotaExhausted, runQueue, type GeminiConfig } from "../src/discovery/gemini";
 import {
   applyJudgement,
   buildBatchPrompt,
@@ -332,5 +332,48 @@ describe("scorePending", () => {
     let calls = 0;
     await scorePending(db.store, async () => { calls++; return "{}"; }, { intervalMs: 0, maxCalls: 5 }, { now: NOW });
     expect(calls).toBe(0);
+  });
+});
+
+describe("fallback model", () => {
+  const config: GeminiConfig = {
+    apiKey: "k", model: "main", fallbackModel: "reserve", intervalMs: 0, maxCalls: 1, thinkingLevel: "low",
+  };
+  const calls: string[] = [];
+  const fake = (outcome: Record<string, () => string>) =>
+    async (_c: GeminiConfig, model: string) => {
+      calls.push(model);
+      return outcome[model]();
+    };
+
+  it("sends the same request to the fallback when the main model stays overloaded", async () => {
+    calls.length = 0;
+    const generate = geminiGenerateJson(config, fake({
+      main: () => { throw new ModelOverloaded("503"); },
+      reserve: () => "{\"ok\":true}",
+    }));
+    expect(await generate("p", {})).toBe("{\"ok\":true}");
+    expect(calls).toEqual(["main", "reserve"]);
+  });
+
+  it("does not use the fallback for other errors, like the main model's quota", async () => {
+    calls.length = 0;
+    const generate = geminiGenerateJson(config, fake({
+      main: () => { throw new QuotaExhausted("daily"); },
+      reserve: () => "x",
+    }));
+    await expect(generate("p", {})).rejects.toBeInstanceOf(QuotaExhausted);
+    expect(calls).toEqual(["main"]);
+  });
+
+  it("a fallback out of quota leaves the batch pending without stopping the run", async () => {
+    const generate = geminiGenerateJson(config, fake({
+      main: () => { throw new ModelOverloaded("503"); },
+      reserve: () => { throw new QuotaExhausted("daily"); },
+    }));
+    const error = await generate("p", {}).catch((e) => e);
+    expect(error).not.toBeInstanceOf(QuotaExhausted);
+    expect(error.name).not.toBe("QuotaExhausted");
+    expect(String(error.message)).toContain("reserva reserve");
   });
 });
